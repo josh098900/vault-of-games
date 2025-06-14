@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +21,7 @@ export interface Discussion {
     username: string | null;
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
   is_liked?: boolean;
 }
 
@@ -36,7 +35,7 @@ export const useDiscussions = (searchQuery?: string, category?: string) => {
         .from('discussions')
         .select(`
           *,
-          profiles!discussions_user_id_fkey (
+          profiles:user_id (
             username,
             display_name,
             avatar_url
@@ -70,11 +69,16 @@ export const useDiscussions = (searchQuery?: string, category?: string) => {
         
         return data.map(discussion => ({
           ...discussion,
-          is_liked: likedDiscussionIds.has(discussion.id)
+          is_liked: likedDiscussionIds.has(discussion.id),
+          profiles: discussion.profiles || null
         }));
       }
 
-      return data || [];
+      return data?.map(discussion => ({
+        ...discussion,
+        is_liked: false,
+        profiles: discussion.profiles || null
+      })) || [];
     },
   });
 };
