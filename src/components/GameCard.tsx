@@ -109,7 +109,7 @@ export const GameCard = ({ game }: GameCardProps) => {
 
         {/* User Rating (if in library and rated) */}
         {userGame?.user_rating && (
-          <div className="absolute top-2 right-2 flex items-center bg-black/80 backdrop-blur-sm rounded-full px-2 py-1">
+          <div className="absolute top-2 right-2 flex items-center bg-black/90 backdrop-blur-sm rounded-full px-2 py-1 border border-white/20">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1" />
             <span className="text-xs font-bold text-white">{userGame.user_rating}</span>
           </div>
@@ -123,7 +123,7 @@ export const GameCard = ({ game }: GameCardProps) => {
                 <Button 
                   size="sm" 
                   variant="secondary" 
-                  className="bg-black/50 backdrop-blur-sm border-white/20 hover:bg-black/70"
+                  className="bg-black/90 backdrop-blur-sm border border-white/30 hover:bg-black text-white shadow-lg"
                   disabled={addGameToLibrary.isPending}
                 >
                   {addGameToLibrary.isPending ? (
@@ -134,7 +134,7 @@ export const GameCard = ({ game }: GameCardProps) => {
                   Add
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-sm border border-white/20">
                 <DropdownMenuItem onClick={() => handleAddToLibrary("wishlist")}>
                   <Heart className="w-3 h-3 mr-2 text-pink-400" />
                   Add to Wishlist
@@ -154,7 +154,7 @@ export const GameCard = ({ game }: GameCardProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Badge className={`${getStatusColor(userGame.status)} text-xs flex items-center gap-1`}>
+            <Badge className={`${getStatusColor(userGame.status)} text-xs flex items-center gap-1 border border-white/20 shadow-lg`}>
               {getStatusIcon(userGame.status)}
               In Library
             </Badge>
