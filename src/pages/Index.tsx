@@ -1,5 +1,5 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +8,12 @@ import { Search, Star, Gamepad, User, TrendingUp, Heart, Plus } from "lucide-rea
 import { GameCard } from "@/components/GameCard";
 import { Header } from "@/components/Header";
 import { FeaturedSection } from "@/components/FeaturedSection";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   const featuredGames = [
     {
@@ -62,6 +65,17 @@ const Index = () => {
     { title: "Super Mario Wonder", rating: 4.8, reviews: 1234 }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Gamepad className="w-16 h-16 mx-auto text-primary mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Loading GameVault...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -77,7 +91,10 @@ const Index = () => {
             GameVault
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            The Ultimate Gaming Social Paradise. Track, rate, and discover your next favorite game with the community.
+            {user 
+              ? `Welcome back, ${user.user_metadata?.username || user.email?.split('@')[0]}! Track, rate, and discover your next favorite game.`
+              : "The Ultimate Gaming Social Paradise. Track, rate, and discover your next favorite game with the community."
+            }
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
             <div className="relative flex-1 w-full">
@@ -89,10 +106,19 @@ const Index = () => {
                 className="pl-10 bg-background/50 border-white/20 backdrop-blur-sm"
               />
             </div>
-            <Button className="bg-primary hover:bg-primary/80 glow-blue">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Game
-            </Button>
+            {user ? (
+              <Button className="bg-primary hover:bg-primary/80 glow-blue">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Game
+              </Button>
+            ) : (
+              <Button 
+                className="bg-primary hover:bg-primary/80 glow-blue"
+                onClick={() => navigate("/auth")}
+              >
+                Get Started
+              </Button>
+            )}
           </div>
         </div>
       </section>
