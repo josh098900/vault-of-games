@@ -55,7 +55,7 @@ export const ReviewCard = ({
               alt={review.profiles?.display_name || review.profiles?.username || "User"} 
             />
             <AvatarFallback>
-              {(review.profiles?.display_name || review.profiles?.username || "U").charAt(0).toUpperCase()}
+              {(review.profiles?.display_name || review.profiles?.username || "Anonymous User").charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
@@ -64,7 +64,7 @@ export const ReviewCard = ({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium">
-                    {review.profiles?.display_name || review.profiles?.username || "Anonymous"}
+                    {review.profiles?.display_name || review.profiles?.username || "Anonymous User"}
                   </span>
                   <div className="flex items-center">
                     {renderStars(review.rating)}

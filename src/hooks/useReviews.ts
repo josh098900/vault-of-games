@@ -22,7 +22,7 @@ export interface Review {
     username: string;
     display_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 export interface CreateReviewData {
@@ -44,8 +44,7 @@ export const useReviews = (gameId?: string) => {
         .from("reviews")
         .select(`
           *,
-          games (title, cover_image_url),
-          profiles (username, display_name, avatar_url)
+          games (title, cover_image_url)
         `)
         .order("created_at", { ascending: false });
 
@@ -55,7 +54,12 @@ export const useReviews = (gameId?: string) => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Review[];
+      
+      // Transform the data to match our Review interface
+      return (data || []).map(review => ({
+        ...review,
+        profiles: null // We'll implement profiles later
+      })) as Review[];
     },
   });
 
@@ -75,13 +79,12 @@ export const useReviews = (gameId?: string) => {
         })
         .select(`
           *,
-          games (title, cover_image_url),
-          profiles (username, display_name, avatar_url)
+          games (title, cover_image_url)
         `)
         .single();
 
       if (error) throw error;
-      return data;
+      return { ...data, profiles: null };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -100,13 +103,12 @@ export const useReviews = (gameId?: string) => {
         .eq("id", reviewId)
         .select(`
           *,
-          games (title, cover_image_url),
-          profiles (username, display_name, avatar_url)
+          games (title, cover_image_url)
         `)
         .single();
 
       if (error) throw error;
-      return data;
+      return { ...data, profiles: null };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
