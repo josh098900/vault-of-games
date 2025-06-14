@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Heart, Plus, Clock, Check } from "lucide-react";
+import { Star, Heart, Plus, Clock, Check, Edit } from "lucide-react";
 import { Game, GameStatus, useUserGames } from "@/hooks/useUserGames";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -16,9 +16,10 @@ import {
 
 interface GameCardProps {
   game: Game;
+  onWriteReview?: (game: Game) => void;
 }
 
-export const GameCard = ({ game }: GameCardProps) => {
+export const GameCard = ({ game, onWriteReview }: GameCardProps) => {
   const { user } = useAuth();
   const { userGames, addGameToLibrary } = useUserGames();
   const navigate = useNavigate();
@@ -84,6 +85,22 @@ export const GameCard = ({ game }: GameCardProps) => {
         description: "Failed to add game to library. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleWriteReview = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to write reviews.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    if (onWriteReview) {
+      onWriteReview(game);
     }
   };
 
@@ -180,9 +197,21 @@ export const GameCard = ({ game }: GameCardProps) => {
             </Badge>
           </div>
 
-          <Button className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30">
-            View Details
-          </Button>
+          <div className="flex gap-2">
+            <Button className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30">
+              View Details
+            </Button>
+            {onWriteReview && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleWriteReview}
+                className="border-white/20 hover:bg-white/10"
+              >
+                <Edit className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

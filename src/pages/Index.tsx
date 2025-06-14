@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,10 @@ const Index = () => {
     }
   };
 
+  const handleWriteReview = (game: Game) => {
+    navigate('/reviews', { state: { selectedGame: game } });
+  };
+
   if (loading || gamesLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -155,7 +160,7 @@ const Index = () => {
             <h2 className="text-2xl font-bold mb-6">Search Results for "{searchQuery}"</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
               {searchResults.map((game) => (
-                <GameCard key={game.id} game={game} />
+                <GameCard key={game.id} game={game} onWriteReview={handleWriteReview} />
               ))}
             </div>
             <div className="text-center">
@@ -224,7 +229,7 @@ const Index = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredGames.map((game) => (
-              <GameCard key={game.id} game={game} />
+              <GameCard key={game.id} game={game} onWriteReview={handleWriteReview} />
             ))}
           </div>
         </div>

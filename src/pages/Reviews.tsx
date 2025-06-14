@@ -3,198 +3,281 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Star, ThumbsUp, MessageSquare, Calendar } from "lucide-react";
+import { Search, Filter, Star, TrendingUp, Clock, Edit } from "lucide-react";
 import { Header } from "@/components/Header";
+import { ReviewCard } from "@/components/ReviewCard";
+import { ReviewForm } from "@/components/ReviewForm";
+import { useReviews } from "@/hooks/useReviews";
+import { useGames } from "@/hooks/useGames";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { GameCard } from "@/components/GameCard";
+import { Game } from "@/hooks/useUserGames";
 
 const Reviews = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [editingReview, setEditingReview] = useState<any>(null);
 
-  const reviews = [
-    {
-      id: 1,
-      game: "Baldur's Gate 3",
-      rating: 5,
-      title: "A Masterpiece of Modern RPG Design",
-      content: "This game exceeded every expectation I had. The story branching is incredible, and every choice feels meaningful. The character development is top-notch.",
-      author: "GameMaster42",
-      authorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face",
-      date: "2023-11-15",
-      likes: 47,
-      comments: 12,
-      helpful: true
-    },
-    {
-      id: 2,
-      game: "Spider-Man 2",
-      rating: 4,
-      title: "Great Combat, Amazing Graphics",
-      content: "The web-swinging mechanics are perfected here. Combat feels fluid and the story is engaging, though it feels a bit short for the price point.",
-      author: "WebSlinger",
-      authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=32&h=32&fit=crop&crop=face",
-      date: "2023-11-10",
-      likes: 23,
-      comments: 8,
-      helpful: false
-    },
-    {
-      id: 3,
-      game: "Alan Wake 2",
-      rating: 4,
-      title: "Atmospheric Horror at Its Best",
-      content: "The psychological horror elements are brilliantly executed. The narrative structure is unique and keeps you engaged throughout.",
-      author: "HorrorFan88",
-      authorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face",
-      date: "2023-11-08",
-      likes: 31,
-      comments: 15,
-      helpful: true
+  const { user } = useAuth();
+  const { reviews, isLoading, createReview, updateReview, deleteReview, toggleLike, toggleHelpful } = useReviews();
+  const { games } = useGames();
+
+  // Filter reviews based on search and filter
+  const filteredReviews = reviews.filter(review => {
+    const matchesSearch = !searchQuery || 
+      review.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.games?.title.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (selectedFilter === "all") return matchesSearch;
+    if (selectedFilter === "my-reviews") return matchesSearch && review.user_id === user?.id;
+    if (selectedFilter === "5-star") return matchesSearch && review.rating === 5;
+    if (selectedFilter === "recent") return matchesSearch;
+    
+    return matchesSearch;
+  });
+
+  const handleWriteReview = (game: Game) => {
+    setSelectedGame(game);
+    setEditingReview(null);
+    setShowReviewForm(true);
+  };
+
+  const handleEditReview = (review: any) => {
+    const game = games.find(g => g.id === review.game_id);
+    if (game) {
+      setSelectedGame(game);
+      setEditingReview(review);
+      setShowReviewForm(true);
     }
-  ];
+  };
 
-  const topReviewers = [
-    { name: "GameCritic Pro", reviews: 127, followers: 1250 },
-    { name: "IndieExplorer", reviews: 89, followers: 890 },
-    { name: "AAA_Analyst", reviews: 156, followers: 2100 }
-  ];
+  const handleSubmitReview = async (reviewData: any) => {
+    try {
+      if (editingReview) {
+        await updateReview.mutateAsync({
+          reviewId: editingReview.id,
+          ...reviewData,
+        });
+        toast({
+          title: "Review updated!",
+          description: "Your review has been successfully updated.",
+        });
+      } else {
+        await createReview.mutateAsync(reviewData);
+        toast({
+          title: "Review published!",
+          description: "Your review has been successfully published.",
+        });
+      }
+      setShowReviewForm(false);
+      setSelectedGame(null);
+      setEditingReview(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  const filteredReviews = reviews.filter(review =>
-    searchQuery === "" || 
-    review.game.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    review.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleDeleteReview = async (reviewId: string) => {
+    try {
+      await deleteReview.mutateAsync(reviewId);
+      toast({
+        title: "Review deleted",
+        description: "Your review has been deleted.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLike = async (reviewId: string) => {
+    try {
+      await toggleLike.mutateAsync(reviewId);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to like review. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleHelpful = async (reviewId: string) => {
+    try {
+      await toggleHelpful.mutateAsync(reviewId);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to mark as helpful. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (showReviewForm && selectedGame) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <ReviewForm
+            game={selectedGame}
+            existingReview={editingReview}
+            onSubmit={handleSubmitReview}
+            onCancel={() => {
+              setShowReviewForm(false);
+              setSelectedGame(null);
+              setEditingReview(null);
+            }}
+            isLoading={createReview.isPending || updateReview.isPending}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Reviews Section */}
-          <div className="flex-1">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-6">Game Reviews</h1>
-              
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search reviews..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button className="bg-primary hover:bg-primary/80">
-                  Write Review
-                </Button>
+      {/* Hero Section */}
+      <section className="py-16 px-4 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-green-600/20">
+        <div className="container mx-auto text-center">
+          <h1 className="text-4xl font-bold mb-4 text-gradient">Game Reviews</h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Discover what the community thinks about your favorite games and share your own experiences.
+          </p>
+        </div>
+      </section>
+
+      {/* Search and Filters */}
+      <section className="py-8 px-4 border-b border-white/10">
+        <div className="container mx-auto">
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search reviews..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-background/50 border-white/20"
+                />
               </div>
+              <Button variant="outline" className="border-white/20">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+              </Button>
             </div>
 
-            {/* Reviews List */}
-            <div className="space-y-6">
-              {filteredReviews.map((review) => (
-                <Card key={review.id} className="gaming-card">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={review.authorAvatar} />
-                          <AvatarFallback>{review.author[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-bold">{review.author}</h3>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {new Date(review.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className="mb-2">
-                          {review.game}
-                        </Badge>
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <h4 className="text-lg font-semibold mb-3">{review.title}</h4>
-                    <p className="text-muted-foreground mb-4">{review.content}</p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <Button variant="ghost" size="sm" className="text-muted-foreground">
-                          <ThumbsUp className="w-4 h-4 mr-1" />
-                          {review.likes}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground">
-                          <MessageSquare className="w-4 h-4 mr-1" />
-                          {review.comments}
-                        </Button>
-                      </div>
-                      {review.helpful && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-700">
-                          Helpful Review
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="flex gap-2 flex-wrap">
+              <Badge 
+                variant={selectedFilter === "all" ? "default" : "outline"}
+                className={`cursor-pointer ${selectedFilter === "all" ? "bg-primary" : "border-white/20"}`}
+                onClick={() => setSelectedFilter("all")}
+              >
+                All Reviews
+              </Badge>
+              {user && (
+                <Badge 
+                  variant={selectedFilter === "my-reviews" ? "default" : "outline"}
+                  className={`cursor-pointer ${selectedFilter === "my-reviews" ? "bg-primary" : "border-white/20"}`}
+                  onClick={() => setSelectedFilter("my-reviews")}
+                >
+                  My Reviews
+                </Badge>
+              )}
+              <Badge 
+                variant={selectedFilter === "5-star" ? "default" : "outline"}
+                className={`cursor-pointer ${selectedFilter === "5-star" ? "bg-primary" : "border-white/20"}`}
+                onClick={() => setSelectedFilter("5-star")}
+              >
+                <Star className="w-3 h-3 mr-1" />
+                5 Star
+              </Badge>
+              <Badge 
+                variant={selectedFilter === "recent" ? "default" : "outline"}
+                className={`cursor-pointer ${selectedFilter === "recent" ? "bg-primary" : "border-white/20"}`}
+                onClick={() => setSelectedFilter("recent")}
+              >
+                <Clock className="w-3 h-3 mr-1" />
+                Recent
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Games to Review Section */}
+      {user && (
+        <section className="py-8 px-4">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <Edit className="w-6 h-6 mr-2 text-primary" />
+              Write a Review
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {games.slice(0, 4).map((game) => (
+                <GameCard 
+                  key={game.id} 
+                  game={game} 
+                  onWriteReview={handleWriteReview}
+                />
               ))}
             </div>
           </div>
+        </section>
+      )}
 
-          {/* Sidebar */}
-          <div className="lg:w-80">
-            <Card className="gaming-card mb-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Top Reviewers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topReviewers.map((reviewer, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{reviewer.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {reviewer.reviews} reviews
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{reviewer.followers}</p>
-                        <p className="text-xs text-muted-foreground">followers</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="gaming-card">
-              <CardHeader>
-                <CardTitle className="text-lg">Review Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-sm space-y-2 text-muted-foreground">
-                  <li>• Be honest and constructive</li>
-                  <li>• Focus on gameplay experience</li>
-                  <li>• Avoid spoilers in titles</li>
-                  <li>• Rate based on game quality</li>
-                </ul>
-              </CardContent>
-            </Card>
+      {/* Reviews Section */}
+      <section className="py-8 px-4">
+        <div className="container mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold flex items-center">
+              <TrendingUp className="w-6 h-6 mr-2 text-green-400" />
+              Latest Reviews
+            </h2>
+            <p className="text-muted-foreground">
+              {filteredReviews.length} review{filteredReviews.length !== 1 ? 's' : ''}
+            </p>
           </div>
+          
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading reviews...</p>
+            </div>
+          ) : filteredReviews.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No reviews found.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {filteredReviews.map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  onLike={handleLike}
+                  onHelpful={handleHelpful}
+                  onEdit={handleEditReview}
+                  onDelete={handleDeleteReview}
+                  showGame={true}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 };
