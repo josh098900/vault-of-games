@@ -3,71 +3,41 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, Star, Calendar, Users } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Filter, Calendar } from "lucide-react";
 import { Header } from "@/components/Header";
 import { GameCard } from "@/components/GameCard";
+import { useGames } from "@/hooks/useGames";
 
 const Discover = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("all");
+  const { games, isLoading } = useGames();
 
-  const genres = ["all", "Action", "RPG", "Strategy", "Sports", "Racing", "Puzzle"];
+  // Get unique genres from games
+  const genres = ["all", ...Array.from(new Set(games.map(game => game.genre).filter(Boolean)))];
   
-  const discoverGames = [
-    {
-      id: 5,
-      title: "Elden Ring",
-      cover: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=300&h=400&fit=crop",
-      rating: 4.8,
-      genre: "RPG",
-      platform: "PC",
-      status: "wishlist",
-      year: 2022
-    },
-    {
-      id: 6,
-      title: "God of War",
-      cover: "https://images.unsplash.com/photo-1585504198199-20277593b94f?w=300&h=400&fit=crop",
-      rating: 4.9,
-      genre: "Action",
-      platform: "PlayStation",
-      status: "backlog",
-      year: 2018
-    },
-    {
-      id: 7,
-      title: "Civilization VI",
-      cover: "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=300&h=400&fit=crop",
-      rating: 4.5,
-      genre: "Strategy",
-      platform: "PC",
-      status: "playing",
-      year: 2016
-    },
-    {
-      id: 8,
-      title: "FIFA 24",
-      cover: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=400&fit=crop",
-      rating: 4.2,
-      genre: "Sports",
-      platform: "PC",
-      status: "completed",
-      year: 2023
-    }
-  ];
-
-  const newReleases = [
-    { title: "Spider-Man 2", releaseDate: "2023-10-20", platform: "PlayStation" },
-    { title: "Alan Wake 2", releaseDate: "2023-10-27", platform: "PC" },
-    { title: "Super Mario Wonder", releaseDate: "2023-10-20", platform: "Switch" },
-    { title: "Forza Motorsport", releaseDate: "2023-10-10", platform: "Xbox" }
-  ];
-
-  const filteredGames = discoverGames.filter(game => 
+  // Filter games based on search and genre
+  const filteredGames = games.filter(game => 
     (selectedGenre === "all" || game.genre === selectedGenre) &&
     (searchQuery === "" || game.title.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Sample new releases (could be enhanced to filter by recent release_year)
+  const newReleases = games
+    .filter(game => game.release_year && game.release_year >= 2023)
+    .slice(0, 4);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">Loading games...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,36 +80,44 @@ const Discover = () => {
         </div>
 
         {/* New Releases Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <Calendar className="w-6 h-6 mr-2 text-primary" />
-            New Releases
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {newReleases.map((game, index) => (
-              <Card key={index} className="gaming-card">
-                <CardContent className="p-4">
-                  <h3 className="font-bold mb-2">{game.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Released: {new Date(game.releaseDate).toLocaleDateString()}
-                  </p>
-                  <Badge variant="secondary" className="text-xs">
-                    {game.platform}
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+        {newReleases.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <Calendar className="w-6 h-6 mr-2 text-primary" />
+              New Releases
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {newReleases.map((game) => (
+                <Card key={game.id} className="gaming-card">
+                  <CardContent className="p-4">
+                    <h3 className="font-bold mb-2">{game.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Released: {game.release_year}
+                    </p>
+                    <Badge variant="secondary" className="text-xs">
+                      {game.platform}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Discover Games Grid */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">All Games</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredGames.map((game) => (
-              <GameCard key={game.id} game={game} />
-            ))}
-          </div>
+          <h2 className="text-2xl font-bold mb-6">All Games ({filteredGames.length})</h2>
+          {filteredGames.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredGames.map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No games found matching your criteria.</p>
+            </div>
+          )}
         </section>
       </div>
     </div>

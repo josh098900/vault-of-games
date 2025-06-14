@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -8,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Gamepad, User, Bell, LogOut, Settings } from "lucide-react";
+import { Gamepad, User, Bell, LogOut, Settings, Library } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -34,6 +33,12 @@ export const Header = () => {
           <Link to="/discover" className="text-sm hover:text-primary transition-colors">
             Discover
           </Link>
+          {user && (
+            <Link to="/library" className="text-sm hover:text-primary transition-colors flex items-center gap-2">
+              <Library className="w-4 h-4" />
+              Library
+            </Link>
+          )}
           <Link to="/reviews" className="text-sm hover:text-primary transition-colors">
             Reviews
           </Link>
@@ -71,6 +76,10 @@ export const Header = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/library")}>
+                    <Library className="w-4 h-4 mr-2" />
+                    My Library
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     <Settings className="w-4 h-4 mr-2" />
                     Edit Profile

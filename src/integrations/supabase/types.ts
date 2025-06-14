@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      games: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          developer: string | null
+          genre: string | null
+          id: string
+          platform: string | null
+          publisher: string | null
+          release_year: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          genre?: string | null
+          id?: string
+          platform?: string | null
+          publisher?: string | null
+          release_year?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          genre?: string | null
+          id?: string
+          platform?: string | null
+          publisher?: string | null
+          release_year?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -45,6 +87,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_games: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          game_id: string
+          hours_played: number | null
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["game_status"]
+          updated_at: string
+          user_id: string
+          user_rating: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          game_id: string
+          hours_played?: number | null
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["game_status"]
+          updated_at?: string
+          user_id: string
+          user_rating?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          game_id?: string
+          hours_played?: number | null
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["game_status"]
+          updated_at?: string
+          user_id?: string
+          user_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_games_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -53,7 +145,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      game_status: "playing" | "completed" | "wishlist" | "backlog" | "dropped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -168,6 +260,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      game_status: ["playing", "completed", "wishlist", "backlog", "dropped"],
+    },
   },
 } as const

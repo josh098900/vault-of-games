@@ -2,9 +2,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Heart, Plus, Clock, Check } from "lucide-react";
-import { Game, GameStatus, useUserGames } from "@/hooks/useUserGames";
-import { useAuth } from "@/contexts/AuthContext";
+import { Star, Heart, Plus, Clock, Check, Trash2, Edit } from "lucide-react";
+import { UserGame, GameStatus, useUserGames } from "@/hooks/useUserGames";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,16 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface GameCardProps {
-  game: Game;
+interface GameLibraryCardProps {
+  userGame: UserGame;
 }
 
-export const GameCard = ({ game }: GameCardProps) => {
-  const { user } = useAuth();
-  const { userGames, addGameToLibrary } = useUserGames();
-  
-  // Check if this game is already in user's library
-  const userGame = userGames.find(ug => ug.game_id === game.id);
+export const GameLibraryCard = ({ userGame }: GameLibraryCardProps) => {
+  const { updateGameStatus, removeGameFromLibrary } = useUserGames();
+  const { games: game } = userGame;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -53,13 +49,15 @@ export const GameCard = ({ game }: GameCardProps) => {
     }
   };
 
-  const handleAddToLibrary = (status: GameStatus) => {
-    if (!user) return;
-    
-    addGameToLibrary.mutate({
-      gameId: game.id,
-      status,
+  const handleStatusChange = (newStatus: GameStatus) => {
+    updateGameStatus.mutate({
+      userGameId: userGame.id,
+      status: newStatus,
     });
+  };
+
+  const handleRemove = () => {
+    removeGameFromLibrary.mutate(userGame.id);
   };
 
   return (
@@ -72,58 +70,57 @@ export const GameCard = ({ game }: GameCardProps) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         
-        {/* Status Badge (if in user's library) */}
-        {userGame && (
-          <div className="absolute top-2 left-2">
-            <Badge className={`${getStatusColor(userGame.status)} flex items-center gap-1 text-xs`}>
-              {getStatusIcon(userGame.status)}
-              {userGame.status}
-            </Badge>
-          </div>
-        )}
-
-        {/* User Rating (if in library and rated) */}
-        {userGame?.user_rating && (
+        {/* Rating */}
+        {userGame.user_rating && (
           <div className="absolute top-2 right-2 flex items-center bg-black/80 backdrop-blur-sm rounded-full px-2 py-1">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1" />
             <span className="text-xs font-bold text-white">{userGame.user_rating}</span>
           </div>
         )}
 
+        {/* Status Badge */}
+        <div className="absolute top-2 left-2">
+          <Badge className={`${getStatusColor(userGame.status)} flex items-center gap-1 text-xs`}>
+            {getStatusIcon(userGame.status)}
+            {userGame.status}
+          </Badge>
+        </div>
+
         {/* Quick Actions */}
-        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          {user && !userGame ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="secondary" className="bg-black/50 backdrop-blur-sm border-white/20">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleAddToLibrary("wishlist")}>
-                  <Heart className="w-3 h-3 mr-2" />
-                  Wishlist
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAddToLibrary("playing")}>
-                  <Clock className="w-3 h-3 mr-2" />
-                  Playing
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAddToLibrary("completed")}>
-                  <Check className="w-3 h-3 mr-2" />
-                  Completed
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAddToLibrary("backlog")}>
-                  <Plus className="w-3 h-3 mr-2" />
-                  Backlog
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : userGame ? (
-            <Badge className={`${getStatusColor(userGame.status)} text-xs`}>
-              In Library
-            </Badge>
-          ) : null}
+        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="secondary" className="bg-black/50 backdrop-blur-sm border-white/20">
+                <Edit className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleStatusChange("wishlist")}>
+                Wishlist
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange("playing")}>
+                Playing
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange("completed")}>
+                Completed
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange("backlog")}>
+                Backlog
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange("dropped")}>
+                Dropped
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="bg-black/50 backdrop-blur-sm border-white/20"
+            onClick={handleRemove}
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
       </div>
 
@@ -144,6 +141,12 @@ export const GameCard = ({ game }: GameCardProps) => {
               {game.platform}
             </Badge>
           </div>
+
+          {userGame.hours_played && (
+            <div className="text-sm text-muted-foreground">
+              {userGame.hours_played} hours played
+            </div>
+          )}
 
           <Button className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30">
             View Details

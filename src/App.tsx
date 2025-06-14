@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Discover from "./pages/Discover";
+import Library from "./pages/Library";
 import Reviews from "./pages/Reviews";
 import Community from "./pages/Community";
 import Leaderboards from "./pages/Leaderboards";
@@ -28,6 +28,7 @@ const App: React.FC = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/discover" element={<Discover />} />
+            <Route path="/library" element={<Library />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/community" element={<Community />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
