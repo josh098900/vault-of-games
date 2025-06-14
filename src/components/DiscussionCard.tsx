@@ -21,15 +21,19 @@ interface Discussion {
   lastActivity: string;
   createdAt: string;
   tags: string[];
+  isLiked?: boolean;
 }
 
 interface DiscussionCardProps {
   discussion: Discussion;
   onLike?: (id: string) => void;
   onClick?: (id: string) => void;
+  isLiked?: boolean;
 }
 
-export const DiscussionCard = ({ discussion, onLike, onClick }: DiscussionCardProps) => {
+export const DiscussionCard = ({ discussion, onLike, onClick, isLiked }: DiscussionCardProps) => {
+  const liked = isLiked ?? discussion.isLiked ?? false;
+
   return (
     <Card className="gaming-card hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onClick?.(discussion.id)}>
       <CardHeader className="pb-3">
@@ -92,9 +96,9 @@ export const DiscussionCard = ({ discussion, onLike, onClick }: DiscussionCardPr
               e.stopPropagation();
               onLike?.(discussion.id);
             }}
-            className="text-muted-foreground hover:text-pink-400 gap-1"
+            className={`gap-1 ${liked ? 'text-pink-400 hover:text-pink-500' : 'text-muted-foreground hover:text-pink-400'}`}
           >
-            <ThumbsUp className="w-4 h-4" />
+            <ThumbsUp className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
             {discussion.likes}
           </Button>
         </div>
