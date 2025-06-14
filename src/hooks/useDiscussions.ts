@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +35,7 @@ export const useDiscussions = (searchQuery?: string, category?: string) => {
         .from('discussions')
         .select(`
           *,
-          profiles:user_id (
+          profiles!discussions_user_id_fkey (
             username,
             display_name,
             avatar_url
