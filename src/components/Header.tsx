@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad, User, Bell, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
@@ -24,18 +24,18 @@ export const Header = () => {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <a href="#" className="text-sm hover:text-primary transition-colors">
+          <Link to="/discover" className="text-sm hover:text-primary transition-colors">
             Discover
-          </a>
-          <a href="#" className="text-sm hover:text-primary transition-colors">
+          </Link>
+          <Link to="/reviews" className="text-sm hover:text-primary transition-colors">
             Reviews
-          </a>
-          <a href="#" className="text-sm hover:text-primary transition-colors">
+          </Link>
+          <Link to="/community" className="text-sm hover:text-primary transition-colors">
             Community
-          </a>
-          <a href="#" className="text-sm hover:text-primary transition-colors">
+          </Link>
+          <Link to="/leaderboards" className="text-sm hover:text-primary transition-colors">
             Leaderboards
-          </a>
+          </Link>
         </nav>
 
         {/* User Actions */}
