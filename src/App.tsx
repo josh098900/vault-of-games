@@ -11,6 +11,7 @@ import Discover from "./pages/Discover";
 import Reviews from "./pages/Reviews";
 import Community from "./pages/Community";
 import Leaderboards from "./pages/Leaderboards";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/community" element={<Community />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
