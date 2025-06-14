@@ -83,6 +83,7 @@ const Community = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [discussions, setDiscussions] = useState(mockDiscussions);
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set()); // Track which discussions user has liked
 
   const filteredDiscussions = discussions.filter(discussion => {
     const matchesSearch = !searchQuery || 
@@ -115,9 +116,24 @@ const Community = () => {
   };
 
   const handleLikeDiscussion = (id: string) => {
+    const isCurrentlyLiked = userLikes.has(id);
+    
     setDiscussions(discussions.map(d => 
-      d.id === id ? { ...d, likes: d.likes + 1 } : d
+      d.id === id ? { 
+        ...d, 
+        likes: isCurrentlyLiked ? d.likes - 1 : d.likes + 1 
+      } : d
     ));
+
+    setUserLikes(prev => {
+      const newLikes = new Set(prev);
+      if (isCurrentlyLiked) {
+        newLikes.delete(id);
+      } else {
+        newLikes.add(id);
+      }
+      return newLikes;
+    });
   };
 
   const handleDiscussionClick = (id: string) => {
