@@ -9,52 +9,57 @@ import { GameCard } from "@/components/GameCard";
 import { Header } from "@/components/Header";
 import { FeaturedSection } from "@/components/FeaturedSection";
 import { useAuth } from "@/contexts/AuthContext";
+import { Game } from "@/hooks/useUserGames";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const featuredGames = [
+  const featuredGames: Game[] = [
     {
-      id: 1,
+      id: "1",
       title: "Cyberpunk 2077",
-      cover: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&h=400&fit=crop",
-      rating: 4.2,
+      description: "A futuristic open-world RPG",
       genre: "RPG",
       platform: "PC",
-      status: "completed",
-      year: 2020
+      release_year: 2020,
+      cover_image_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&h=400&fit=crop",
+      developer: "CD Projekt RED",
+      publisher: "CD Projekt"
     },
     {
-      id: 2,
+      id: "2",
       title: "The Last of Us Part II",
-      cover: "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=300&h=400&fit=crop",
-      rating: 4.8,
+      description: "Post-apocalyptic action-adventure",
       genre: "Action",
       platform: "PlayStation",
-      status: "playing",
-      year: 2020
+      release_year: 2020,
+      cover_image_url: "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=300&h=400&fit=crop",
+      developer: "Naughty Dog",
+      publisher: "Sony Interactive Entertainment"
     },
     {
-      id: 3,
+      id: "3",
       title: "Hades",
-      cover: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&h=400&fit=crop",
-      rating: 4.9,
+      description: "A rogue-like dungeon crawler",
       genre: "Roguelike",
       platform: "Steam",
-      status: "backlog",
-      year: 2020
+      release_year: 2020,
+      cover_image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&h=400&fit=crop",
+      developer: "Supergiant Games",
+      publisher: "Supergiant Games"
     },
     {
-      id: 4,
+      id: "4",
       title: "Ghost of Tsushima",
-      cover: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=400&fit=crop",
-      rating: 4.6,
+      description: "Samurai action-adventure",
       genre: "Action",
       platform: "PlayStation",
-      status: "wishlist",
-      year: 2020
+      release_year: 2020,
+      cover_image_url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=400&fit=crop",
+      developer: "Sucker Punch Productions",
+      publisher: "Sony Interactive Entertainment"
     }
   ];
 
