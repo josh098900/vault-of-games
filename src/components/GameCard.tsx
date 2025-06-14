@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Star, Heart, Plus, Clock, Check } from "lucide-react";
 import { Game, GameStatus, useUserGames } from "@/hooks/useUserGames";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,7 @@ interface GameCardProps {
 export const GameCard = ({ game }: GameCardProps) => {
   const { user } = useAuth();
   const { userGames, addGameToLibrary } = useUserGames();
+  const navigate = useNavigate();
   
   // Check if this game is already in user's library
   const userGame = userGames.find(ug => ug.game_id === game.id);
@@ -53,13 +56,35 @@ export const GameCard = ({ game }: GameCardProps) => {
     }
   };
 
-  const handleAddToLibrary = (status: GameStatus) => {
-    if (!user) return;
+  const handleAddToLibrary = async (status: GameStatus) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to add games to your library.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
     
-    addGameToLibrary.mutate({
-      gameId: game.id,
-      status,
-    });
+    try {
+      await addGameToLibrary.mutateAsync({
+        gameId: game.id,
+        status,
+      });
+      
+      toast({
+        title: "Game added!",
+        description: `${game.title} has been added to your ${status} list.`,
+      });
+    } catch (error) {
+      console.error("Error adding game to library:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add game to library. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -92,38 +117,48 @@ export const GameCard = ({ game }: GameCardProps) => {
 
         {/* Quick Actions */}
         <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          {user && !userGame ? (
+          {!userGame ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="secondary" className="bg-black/50 backdrop-blur-sm border-white/20">
-                  <Plus className="w-3 h-3 mr-1" />
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  className="bg-black/50 backdrop-blur-sm border-white/20 hover:bg-black/70"
+                  disabled={addGameToLibrary.isPending}
+                >
+                  {addGameToLibrary.isPending ? (
+                    <div className="w-3 h-3 animate-spin rounded-full border border-white border-t-transparent mr-1" />
+                  ) : (
+                    <Plus className="w-3 h-3 mr-1" />
+                  )}
                   Add
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleAddToLibrary("wishlist")}>
-                  <Heart className="w-3 h-3 mr-2" />
-                  Wishlist
+                  <Heart className="w-3 h-3 mr-2 text-pink-400" />
+                  Add to Wishlist
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToLibrary("playing")}>
-                  <Clock className="w-3 h-3 mr-2" />
-                  Playing
+                  <Clock className="w-3 h-3 mr-2 text-blue-400" />
+                  Currently Playing
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToLibrary("completed")}>
-                  <Check className="w-3 h-3 mr-2" />
-                  Completed
+                  <Check className="w-3 h-3 mr-2 text-green-400" />
+                  Mark as Completed
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAddToLibrary("backlog")}>
-                  <Plus className="w-3 h-3 mr-2" />
-                  Backlog
+                  <Plus className="w-3 h-3 mr-2 text-yellow-400" />
+                  Add to Backlog
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : userGame ? (
-            <Badge className={`${getStatusColor(userGame.status)} text-xs`}>
+          ) : (
+            <Badge className={`${getStatusColor(userGame.status)} text-xs flex items-center gap-1`}>
+              {getStatusIcon(userGame.status)}
               In Library
             </Badge>
-          ) : null}
+          )}
         </div>
       </div>
 

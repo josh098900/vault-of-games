@@ -10,10 +10,12 @@ import { Header } from "@/components/Header";
 import { FeaturedSection } from "@/components/FeaturedSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { Game } from "@/hooks/useUserGames";
+import { useGames } from "@/hooks/useGames";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { user, loading } = useAuth();
+  const { games, isLoading: gamesLoading } = useGames();
   const navigate = useNavigate();
 
   const featuredGames: Game[] = [
@@ -70,7 +72,21 @@ const Index = () => {
     { title: "Super Mario Wonder", rating: 4.8, reviews: 1234 }
   ];
 
-  if (loading) {
+  // Filter games from database based on search
+  const searchResults = searchQuery.length > 0 
+    ? games.filter(game => 
+        game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        game.genre?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/discover?search=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  if (loading || gamesLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -108,13 +124,17 @@ const Index = () => {
                 placeholder="Search for games..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="pl-10 bg-background/50 border-white/20 backdrop-blur-sm"
               />
             </div>
             {user ? (
-              <Button className="bg-primary hover:bg-primary/80 glow-blue">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Game
+              <Button 
+                className="bg-primary hover:bg-primary/80 glow-blue"
+                onClick={handleSearch}
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Search Games
               </Button>
             ) : (
               <Button 
@@ -127,6 +147,25 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Search Results */}
+      {searchResults.length > 0 && (
+        <section className="py-8 px-4">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-bold mb-6">Search Results for "{searchQuery}"</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+              {searchResults.map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+            <div className="text-center">
+              <Button variant="outline" onClick={handleSearch}>
+                View All Results
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Section */}
       <FeaturedSection />
