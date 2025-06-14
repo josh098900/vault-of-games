@@ -3,235 +3,221 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Users, MessageSquare, TrendingUp, Calendar, Pin } from "lucide-react";
+import { Search, Filter, TrendingUp, MessageCircle, Users } from "lucide-react";
 import { Header } from "@/components/Header";
+import { DiscussionCard } from "@/components/DiscussionCard";
+import { CreateDiscussionDialog } from "@/components/CreateDiscussionDialog";
+import { CommunityStats } from "@/components/CommunityStats";
+import { toast } from "@/hooks/use-toast";
+
+// Mock data for discussions
+const mockDiscussions = [
+  {
+    id: "1",
+    title: "Best RPGs of 2024 - What are your favorites?",
+    content: "I've been diving into some amazing RPGs this year and wanted to share my thoughts. Baldur's Gate 3 absolutely blew me away with its storytelling and character development. The voice acting is phenomenal and every choice feels meaningful...",
+    category: "Game Reviews",
+    author: { name: "GameMaster42", avatar: "" },
+    replies: 23,
+    likes: 45,
+    views: 234,
+    lastActivity: "2024-01-15T10:30:00Z",
+    createdAt: "2024-01-14T08:15:00Z",
+    tags: ["rpg", "2024", "recommendations"]
+  },
+  {
+    id: "2",
+    title: "Looking for co-op partners for Elden Ring",
+    content: "Anyone interested in doing some co-op runs through Elden Ring? I'm on PC and usually play evenings EST. Looking for chill players who don't mind dying a lot while we learn the bosses together!",
+    category: "Multiplayer",
+    author: { name: "SoulsVeteran", avatar: "" },
+    replies: 12,
+    likes: 28,
+    views: 156,
+    lastActivity: "2024-01-15T14:22:00Z",
+    createdAt: "2024-01-15T09:45:00Z",
+    tags: ["elden-ring", "co-op", "pc"]
+  },
+  {
+    id: "3",
+    title: "Performance issues with Cyberpunk 2077 after update",
+    content: "Has anyone else been experiencing frame drops and stuttering after the latest Cyberpunk 2077 update? My rig used to run it smoothly at high settings, but now I'm getting constant dips below 30fps...",
+    category: "Technical Help",
+    author: { name: "TechTrouble", avatar: "" },
+    replies: 8,
+    likes: 15,
+    views: 89,
+    lastActivity: "2024-01-15T16:10:00Z",
+    createdAt: "2024-01-15T12:30:00Z",
+    tags: ["cyberpunk", "performance", "help"]
+  }
+];
+
+const mockStats = {
+  totalMembers: 15420,
+  activeDiscussions: 127,
+  todaysPosts: 34,
+  thisWeeksPosts: 298
+};
+
+const mockTopContributors = [
+  { name: "GameMaster42", posts: 156 },
+  { name: "PixelPundit", posts: 134 },
+  { name: "RetroGamer", posts: 98 },
+  { name: "SpeedRunner23", posts: 87 },
+  { name: "IndieExplorer", posts: 72 }
+];
+
+const categories = [
+  "All Categories",
+  "General Discussion", 
+  "Game Reviews",
+  "Technical Help",
+  "Gaming News",
+  "Multiplayer",
+  "Recommendations",
+  "Off Topic"
+];
 
 const Community = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [discussions, setDiscussions] = useState(mockDiscussions);
 
-  const discussions = [
-    {
-      id: 1,
-      title: "Best RPGs of 2023 - What's your top pick?",
-      author: "RPGLover",
-      authorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face",
-      category: "Discussion",
-      replies: 42,
-      lastActivity: "2 hours ago",
-      isPinned: true,
-      tags: ["RPG", "2023", "Recommendations"]
-    },
-    {
-      id: 2,
-      title: "Looking for co-op partners for Baldur's Gate 3",
-      author: "PartySeeker",
-      authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=32&h=32&fit=crop&crop=face",
-      category: "LFG",
-      replies: 15,
-      lastActivity: "4 hours ago",
-      isPinned: false,
-      tags: ["Co-op", "Baldur's Gate 3", "PC"]
-    },
-    {
-      id: 3,
-      title: "Spider-Man 2 - Performance issues on PS5?",
-      author: "TechGamer",
-      authorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face",
-      category: "Technical",
-      replies: 28,
-      lastActivity: "6 hours ago",
-      isPinned: false,
-      tags: ["Spider-Man 2", "PS5", "Performance"]
-    }
-  ];
+  const filteredDiscussions = discussions.filter(discussion => {
+    const matchesSearch = !searchQuery || 
+      discussion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      discussion.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      discussion.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const activeUsers = [
-    { name: "GameMaster42", status: "online", level: 15 },
-    { name: "IndieExplorer", status: "online", level: 12 },
-    { name: "CompetitivePro", status: "away", level: 18 },
-    { name: "CasualGamer", status: "online", level: 8 }
-  ];
+    const matchesCategory = selectedCategory === "All Categories" || discussion.category === selectedCategory;
 
-  const events = [
-    {
-      title: "Weekly Game Night",
-      date: "2023-11-18",
-      time: "8:00 PM EST",
-      participants: 24
-    },
-    {
-      title: "Speedrun Competition",
-      date: "2023-11-20",
-      time: "3:00 PM EST",
-      participants: 16
-    }
-  ];
+    return matchesSearch && matchesCategory;
+  });
 
-  const filteredDiscussions = discussions.filter(discussion =>
-    searchQuery === "" || 
-    discussion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    discussion.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const handleCreateDiscussion = (newDiscussion: any) => {
+    const discussion = {
+      id: Date.now().toString(),
+      ...newDiscussion,
+      author: { name: "You", avatar: "" },
+      replies: 0,
+      likes: 0,
+      views: 0,
+      lastActivity: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    
+    setDiscussions([discussion, ...discussions]);
+    toast({
+      title: "Discussion created!",
+      description: "Your discussion has been posted to the community.",
+    });
+  };
+
+  const handleLikeDiscussion = (id: string) => {
+    setDiscussions(discussions.map(d => 
+      d.id === id ? { ...d, likes: d.likes + 1 } : d
+    ));
+  };
+
+  const handleDiscussionClick = (id: string) => {
+    // In a real app, this would navigate to the discussion detail page
+    toast({
+      title: "Discussion clicked",
+      description: "In a full implementation, this would open the discussion details.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
+      {/* Hero Section */}
+      <section className="py-16 px-4 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20">
+        <div className="container mx-auto text-center">
+          <h1 className="text-4xl font-bold mb-4 text-gradient">Gaming Community</h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Connect with fellow gamers, share experiences, and discover new perspectives in our vibrant community.
+          </p>
+          <CreateDiscussionDialog onSubmit={handleCreateDiscussion} />
+        </div>
+      </section>
+
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <CommunityStats stats={mockStats} topContributors={mockTopContributors} />
+          </div>
+
           {/* Main Content */}
-          <div className="flex-1">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-6">Community</h1>
-              
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search discussions..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button className="bg-primary hover:bg-primary/80">
-                  New Discussion
-                </Button>
+          <div className="lg:col-span-3 space-y-6">
+            {/* Search and Filters */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search discussions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-background/50 border-white/20"
+                />
+              </div>
+              <Button variant="outline" className="border-white/20">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+              </Button>
+            </div>
+
+            {/* Category Filters */}
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <Badge
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  className={`cursor-pointer ${
+                    selectedCategory === category ? "bg-primary" : "border-white/20"
+                  }`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </Badge>
+              ))}
+            </div>
+
+            {/* Stats Bar */}
+            <div className="flex items-center gap-6 text-sm text-muted-foreground bg-card/50 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                <span>{filteredDiscussions.length} discussions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>{mockStats.totalMembers.toLocaleString()} members</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                <span>{mockStats.todaysPosts} posts today</span>
               </div>
             </div>
 
-            <Tabs defaultValue="all" className="mb-6">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="discussion">Discussions</TabsTrigger>
-                <TabsTrigger value="lfg">Looking for Group</TabsTrigger>
-                <TabsTrigger value="technical">Technical</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all" className="space-y-4">
-                {filteredDiscussions.map((discussion) => (
-                  <Card key={discussion.id} className="gaming-card">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          {discussion.isPinned && (
-                            <Pin className="w-4 h-4 text-primary" />
-                          )}
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={discussion.authorAvatar} />
-                            <AvatarFallback>{discussion.author[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{discussion.author}</p>
-                            <p className="text-sm text-muted-foreground">{discussion.lastActivity}</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{discussion.category}</Badge>
-                      </div>
-                      
-                      <h3 className="text-lg font-semibold mb-3 hover:text-primary cursor-pointer">
-                        {discussion.title}
-                      </h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-2">
-                          {discussion.tags.map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MessageSquare className="w-4 h-4 mr-1" />
-                          {discussion.replies} replies
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:w-80 space-y-6">
-            {/* Active Users */}
-            <Card className="gaming-card">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Active Users
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {activeUsers.map((user, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          user.status === 'online' ? 'bg-green-400' : 'bg-yellow-400'
-                        }`} />
-                        <span className="text-sm">{user.name}</span>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        Lvl {user.level}
-                      </Badge>
-                    </div>
-                  ))}
+            {/* Discussions List */}
+            <div className="space-y-4">
+              {filteredDiscussions.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No discussions found.</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Events */}
-            <Card className="gaming-card">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  Upcoming Events
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {events.map((event, index) => (
-                    <div key={index} className="border-l-2 border-primary pl-4">
-                      <h4 className="font-medium">{event.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(event.date).toLocaleDateString()} at {event.time}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {event.participants} participants
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Community Stats */}
-            <Card className="gaming-card">
-              <CardHeader>
-                <CardTitle className="text-lg">Community Stats</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Total Members</span>
-                    <span className="font-medium">2,847</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Online Now</span>
-                    <span className="font-medium">156</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Active Discussions</span>
-                    <span className="font-medium">89</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              ) : (
+                filteredDiscussions.map((discussion) => (
+                  <DiscussionCard
+                    key={discussion.id}
+                    discussion={discussion}
+                    onLike={handleLikeDiscussion}
+                    onClick={handleDiscussionClick}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
