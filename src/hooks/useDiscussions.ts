@@ -36,7 +36,7 @@ export const useDiscussions = (searchQuery?: string, category?: string) => {
         .from('discussions')
         .select(`
           *,
-          profiles:user_id (
+          profiles!discussions_user_id_fkey (
             username,
             display_name,
             avatar_url
