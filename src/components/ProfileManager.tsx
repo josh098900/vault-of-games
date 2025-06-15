@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { User, Save, Upload } from 'lucide-react';
+import { User, Save, Upload, Loader2 } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -26,6 +26,8 @@ export const ProfileManager = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Profile>>({});
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -83,6 +85,81 @@ export const ProfileManager = () => {
       });
     },
   });
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(uploadData.path);
+
+      // Update profile with new avatar URL
+      if (isEditing) {
+        setFormData({ ...formData, avatar_url: publicUrl });
+      } else {
+        await updateProfileMutation.mutateAsync({ avatar_url: publicUrl });
+      }
+
+      toast({
+        title: "Avatar uploaded",
+        description: "Your avatar has been successfully uploaded.",
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleEdit = () => {
     setFormData(profile || {});
@@ -143,19 +220,38 @@ export const ProfileManager = () => {
             </AvatarFallback>
           </Avatar>
           
-          {isEditing && (
-            <div className="w-full max-w-sm space-y-2">
+          <div className="w-full max-w-sm space-y-2">
+            {isEditing && (
               <Input
                 placeholder="Avatar URL"
                 value={formData.avatar_url || ''}
                 onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
               />
-              <Button variant="outline" size="sm" className="w-full">
+            )}
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Avatar
-              </Button>
-            </div>
-          )}
+              )}
+              {isUploading ? 'Uploading...' : 'Upload Avatar'}
+            </Button>
+          </div>
         </div>
 
         {/* Profile Information */}
