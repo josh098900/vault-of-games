@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,23 +28,36 @@ interface MessageReactionsProps {
 export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageReactionsProps) => {
   const { user } = useAuth();
   const [showPicker, setShowPicker] = useState(false);
-  const { data: reactions = [] } = useMessageReactions(messageId, isGroupMessage);
+  const { data: reactions = [], refetch } = useMessageReactions(messageId, isGroupMessage);
   const addReaction = useAddReaction();
   const removeReaction = useRemoveReaction();
 
+  console.log("MessageReactions render:", { messageId, isGroupMessage, reactions });
+
   const handleReactionClick = async (reactionType: string) => {
     if (!user) return;
+
+    console.log("Handling reaction click:", { reactionType, messageId, isGroupMessage });
 
     const existingReaction = reactions.find(
       r => r.user_id === user.id && r.reaction_type === reactionType
     );
 
-    if (existingReaction) {
-      await removeReaction.mutateAsync({ messageId, reactionType, isGroupMessage });
-    } else {
-      await addReaction.mutateAsync({ messageId, reactionType, isGroupMessage });
+    try {
+      if (existingReaction) {
+        console.log("Removing existing reaction:", existingReaction);
+        await removeReaction.mutateAsync({ messageId, reactionType, isGroupMessage });
+      } else {
+        console.log("Adding new reaction");
+        await addReaction.mutateAsync({ messageId, reactionType, isGroupMessage });
+      }
+      
+      // Manually refetch to ensure we get the latest data
+      await refetch();
+      setShowPicker(false);
+    } catch (error) {
+      console.error("Error handling reaction:", error);
     }
-    setShowPicker(false);
   };
 
   // Group reactions by type
@@ -56,6 +70,9 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
   }, {} as Record<string, typeof reactions>);
 
   const userReactions = reactions.filter(r => r.user_id === user?.id).map(r => r.reaction_type);
+
+  console.log("Grouped reactions:", groupedReactions);
+  console.log("User reactions:", userReactions);
 
   return (
     <div className="flex items-center gap-1 mt-1">

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -286,10 +285,14 @@ export const useGroupMessages = (groupId: string) => {
 };
 
 export const useMessageReactions = (messageId: string, isGroupMessage = false) => {
+  const queryClient = useQueryClient();
+  
   return useQuery({
     queryKey: ["message_reactions", messageId, isGroupMessage],
     queryFn: async () => {
       if (!messageId) return [];
+
+      console.log("Fetching reactions for message:", messageId, "isGroup:", isGroupMessage);
 
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
       const { data: reactions, error } = await supabase
@@ -300,14 +303,24 @@ export const useMessageReactions = (messageId: string, isGroupMessage = false) =
         `)
         .eq("message_id", messageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching reactions:", error);
+        throw error;
+      }
 
-      return reactions?.map(reaction => ({
+      console.log("Fetched reactions:", reactions);
+
+      const reactionsWithProfiles = reactions?.map(reaction => ({
         ...reaction,
         user_profile: reaction.profiles
       })) || [];
+
+      console.log("Reactions with profiles:", reactionsWithProfiles);
+      return reactionsWithProfiles;
     },
     enabled: !!messageId,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 
@@ -474,6 +487,8 @@ export const useAddReaction = () => {
       reactionType: string; 
       isGroupMessage?: boolean;
     }) => {
+      console.log("Adding reaction:", { messageId, reactionType, isGroupMessage });
+      
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
       const { data, error } = await supabase
         .from(table)
@@ -485,10 +500,16 @@ export const useAddReaction = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding reaction:", error);
+        throw error;
+      }
+      
+      console.log("Reaction added:", data);
       return data;
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
+      console.log("Invalidating queries for message:", messageId);
       queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
     },
   });
@@ -508,6 +529,8 @@ export const useRemoveReaction = () => {
       reactionType: string; 
       isGroupMessage?: boolean;
     }) => {
+      console.log("Removing reaction:", { messageId, reactionType, isGroupMessage });
+      
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
       const { error } = await supabase
         .from(table)
@@ -516,9 +539,15 @@ export const useRemoveReaction = () => {
         .eq("user_id", user!.id)
         .eq("reaction_type", reactionType);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error removing reaction:", error);
+        throw error;
+      }
+      
+      console.log("Reaction removed successfully");
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
+      console.log("Invalidating queries for message:", messageId);
       queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
     },
   });
