@@ -82,10 +82,6 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
         console.log("Reaction added successfully:", result);
       }
       
-      console.log("Refetching reactions...");
-      await refetch();
-      console.log("Refetch completed");
-      
       setShowPicker(false);
     } catch (error) {
       console.error("=== Reaction Error ===", error);
@@ -129,9 +125,9 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
 
   return (
     <div className="flex items-center gap-1 mt-1">
-      {/* Debug info */}
+      {/* Debug info - temporarily visible */}
       <div className="text-xs text-muted-foreground mr-2">
-        Debug: {reactions.length} reactions loaded
+        Debug: {reactions.length} reactions loaded | User: {user?.id?.slice(0, 8)} | Message: {messageId.slice(0, 8)}
       </div>
       
       {/* Existing reactions */}

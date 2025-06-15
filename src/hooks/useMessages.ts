@@ -323,9 +323,6 @@ export const useMessageReactions = (messageId: string, isGroupMessage = false) =
       return reactions || [];
     },
     enabled: !!messageId,
-    refetchOnWindowFocus: false,
-    staleTime: 0, // Always refetch to get latest data
-    gcTime: 0, // Don't cache
   });
 };
 
@@ -546,7 +543,14 @@ export const useAddReaction = () => {
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
       console.log("=== Add Reaction Success - Invalidating Queries ===");
-      queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
+      // Invalidate and refetch the reactions query
+      queryClient.invalidateQueries({ 
+        queryKey: ["message_reactions", messageId, isGroupMessage] 
+      });
+      // Force refetch
+      queryClient.refetchQueries({ 
+        queryKey: ["message_reactions", messageId, isGroupMessage] 
+      });
     },
     onError: (error) => {
       console.error("=== Add Reaction Mutation Error ===", error);
@@ -594,7 +598,14 @@ export const useRemoveReaction = () => {
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
       console.log("=== Remove Reaction Success - Invalidating Queries ===");
-      queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
+      // Invalidate and refetch the reactions query
+      queryClient.invalidateQueries({ 
+        queryKey: ["message_reactions", messageId, isGroupMessage] 
+      });
+      // Force refetch
+      queryClient.refetchQueries({ 
+        queryKey: ["message_reactions", messageId, isGroupMessage] 
+      });
     },
     onError: (error) => {
       console.error("=== Remove Reaction Mutation Error ===", error);
