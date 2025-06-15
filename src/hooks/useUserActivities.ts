@@ -27,22 +27,34 @@ export const useUserActivities = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
+      // First get the activities
+      const { data: activities, error: activitiesError } = await supabase
         .from("user_activities")
-        .select(`
-          *,
-          profiles!user_activities_user_id_fkey (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
 
-      if (error) throw error;
-      return data as UserActivity[];
+      if (activitiesError) throw activitiesError;
+      if (!activities || activities.length === 0) return [];
+
+      // Get unique user IDs from activities
+      const userIds = [...new Set(activities.map(activity => activity.user_id))];
+      
+      // Get profiles for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine activities with profiles
+      const activitiesWithProfiles = activities.map(activity => ({
+        ...activity,
+        profiles: profiles?.find(profile => profile.id === activity.user_id) || null
+      }));
+
+      return activitiesWithProfiles as UserActivity[];
     },
     enabled: !!user,
   });
