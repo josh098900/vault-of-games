@@ -1,11 +1,16 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, TrendingUp, Users, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const FeaturedSection = () => {
+  const navigate = useNavigate();
+
   const featuredContent = [
     {
+      id: "bg3-featured", // Mock game ID for navigation
       type: "Game of the Month",
       title: "Baldur's Gate 3",
       description: "The community's current obsession. Epic RPG storytelling meets tactical combat.",
@@ -15,6 +20,7 @@ export const FeaturedSection = () => {
       icon: Star
     },
     {
+      id: "pizza-tower-featured", // Mock game ID for navigation
       type: "Rising Star",
       title: "Pizza Tower",
       description: "This indie platformer is climbing the charts with its unique art style.",
@@ -24,6 +30,7 @@ export const FeaturedSection = () => {
       icon: TrendingUp
     },
     {
+      id: "hollow-knight-featured", // Mock game ID for navigation
       type: "Community Choice",
       title: "Hollow Knight",
       description: "The most recommended indie game by our community members.",
@@ -33,6 +40,23 @@ export const FeaturedSection = () => {
       icon: Users
     }
   ];
+
+  const handleExploreGame = (gameId: string, gameTitle: string) => {
+    // Create a mock game object for the featured games
+    const mockGame = {
+      id: gameId,
+      title: gameTitle,
+      description: featuredContent.find(item => item.id === gameId)?.description || "",
+      genre: "Featured",
+      platform: "Multiple",
+      release_year: 2023,
+      cover_image_url: featuredContent.find(item => item.id === gameId)?.image || "",
+      developer: "Featured Developer",
+      publisher: "Featured Publisher"
+    };
+
+    navigate(`/game/${gameId}`, { state: { game: mockGame } });
+  };
 
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-card/20">
@@ -80,7 +104,10 @@ export const FeaturedSection = () => {
                   <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                     {item.description}
                   </p>
-                  <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80"
+                    onClick={() => handleExploreGame(item.id, item.title)}
+                  >
                     Explore Game
                   </Button>
                 </CardContent>
