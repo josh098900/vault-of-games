@@ -45,57 +45,57 @@ export const ProfileStatistics = () => {
 
   const stats = [
     {
-      icon: <Trophy className="w-5 h-5 text-amber-500" />,
+      icon: <Trophy className="w-5 h-5 text-amber-400" />,
       label: "Games Completed",
       value: completedGames,
-      color: "bg-amber-50 border-amber-200"
+      color: "bg-amber-600/10 border-amber-600/20"
     },
     {
-      icon: <Target className="w-5 h-5 text-blue-500" />,
+      icon: <Target className="w-5 h-5 text-blue-400" />,
       label: "Currently Playing",
       value: currentlyPlaying,
-      color: "bg-blue-50 border-blue-200"
+      color: "bg-blue-600/10 border-blue-600/20"
     },
     {
-      icon: <Clock className="w-5 h-5 text-purple-500" />,
+      icon: <Clock className="w-5 h-5 text-purple-400" />,
       label: "Hours Played",
       value: `${totalHours}h`,
-      color: "bg-purple-50 border-purple-200"
+      color: "bg-purple-600/10 border-purple-600/20"
     },
     {
-      icon: <Star className="w-5 h-5 text-yellow-500" />,
+      icon: <Star className="w-5 h-5 text-yellow-400" />,
       label: "Avg Game Rating",
       value: averageRating > 0 ? averageRating.toFixed(1) : "N/A",
-      color: "bg-yellow-50 border-yellow-200"
+      color: "bg-yellow-600/10 border-yellow-600/20"
     },
     {
-      icon: <Users className="w-5 h-5 text-green-500" />,
+      icon: <Users className="w-5 h-5 text-green-400" />,
       label: "Following",
       value: following.length,
-      color: "bg-green-50 border-green-200"
+      color: "bg-green-600/10 border-green-600/20"
     },
     {
-      icon: <Users className="w-5 h-5 text-pink-500" />,
+      icon: <Users className="w-5 h-5 text-pink-400" />,
       label: "Followers",
       value: followers.length,
-      color: "bg-pink-50 border-pink-200"
+      color: "bg-pink-600/10 border-pink-600/20"
     },
     {
-      icon: <BookOpen className="w-5 h-5 text-indigo-500" />,
+      icon: <BookOpen className="w-5 h-5 text-indigo-400" />,
       label: "Reviews Written",
       value: reviewStats?.totalReviews || 0,
-      color: "bg-indigo-50 border-indigo-200"
+      color: "bg-indigo-600/10 border-indigo-600/20"
     },
     {
-      icon: <Star className="w-5 h-5 text-orange-500" />,
+      icon: <Star className="w-5 h-5 text-orange-400" />,
       label: "Avg Review Rating",
       value: reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : "N/A",
-      color: "bg-orange-50 border-orange-200"
+      color: "bg-orange-600/10 border-orange-600/20"
     }
   ];
 
   return (
-    <Card>
+    <Card className="gaming-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5" />
@@ -110,13 +110,13 @@ export const ProfileStatistics = () => {
           {stats.map((stat, index) => (
             <div 
               key={index}
-              className={`p-4 rounded-lg border ${stat.color}`}
+              className={`gaming-card p-4 ${stat.color}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 {stat.icon}
-                <span className="text-sm font-medium">{stat.label}</span>
+                <span className="text-sm font-medium text-foreground">{stat.label}</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-foreground">
                 {stat.value}
               </div>
             </div>
