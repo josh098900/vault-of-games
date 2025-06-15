@@ -61,14 +61,8 @@ export const useReviews = (gameId?: string) => {
         throw error;
       }
       
-      // Transform the data to handle potential null profiles
-      const transformedData = (data || []).map(review => ({
-        ...review,
-        profiles: review.profiles || null
-      }));
-      
-      console.log("Fetched reviews:", transformedData);
-      return transformedData as Review[];
+      console.log("Fetched reviews:", data);
+      return (data || []) as Review[];
     },
   });
 
@@ -107,14 +101,8 @@ export const useReviews = (gameId?: string) => {
         throw new Error("No data returned from review creation");
       }
       
-      // Transform the data to handle potential null profiles
-      const transformedData = {
-        ...data,
-        profiles: data.profiles || null
-      };
-      
-      console.log("Created review:", transformedData);
-      return transformedData as Review;
+      console.log("Created review:", data);
+      return data as Review;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -156,13 +144,7 @@ export const useReviews = (gameId?: string) => {
         throw new Error("No data returned from review update");
       }
       
-      // Transform the data to handle potential null profiles
-      const transformedData = {
-        ...data,
-        profiles: data.profiles || null
-      };
-      
-      return transformedData as Review;
+      return data as Review;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
