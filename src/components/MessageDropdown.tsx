@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Plus } from "lucide-react";
-import { useConversations, useUnreadMessageCount, useUpdatePresence } from "@/hooks/useMessages";
+import { useConversations, useUnreadMessageCount, useUpdatePresence, useMarkMessageRead } from "@/hooks/useMessages";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { StartConversationDialog } from "./social/StartConversationDialog";
@@ -26,6 +26,7 @@ export const MessageDropdown = () => {
   const { data: conversations = [], isLoading } = useConversations();
   const { data: unreadCount = 0 } = useUnreadMessageCount();
   const updatePresence = useUpdatePresence();
+  const markMessageRead = useMarkMessageRead();
   const navigate = useNavigate();
 
   const recentConversations = conversations.slice(0, 5);
@@ -57,12 +58,25 @@ export const MessageDropdown = () => {
 
   const handleConversationClick = (otherUserId: string) => {
     console.log("Navigating to conversation with user:", otherUserId);
+    
+    // Mark unread messages as read immediately when clicking
+    const conversation = conversations.find(conv => conv.other_user_id === otherUserId);
+    if (conversation && conversation.unread_count > 0) {
+      console.log(`Marking ${conversation.unread_count} messages as read for user:`, otherUserId);
+      // Note: The actual message marking will happen in MessagesTab when it loads
+    }
+    
     navigate("/social", { state: { selectedConversation: otherUserId } });
     setOpen(false);
   };
 
   const handleConversationStarted = (userId: string) => {
     navigate("/social", { state: { selectedConversation: userId } });
+    setOpen(false);
+  };
+
+  const handleViewAllMessages = () => {
+    navigate("/social");
     setOpen(false);
   };
 
@@ -146,10 +160,7 @@ export const MessageDropdown = () => {
         
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={() => {
-            navigate("/social");
-            setOpen(false);
-          }}
+          onClick={handleViewAllMessages}
           className="text-center text-sm text-primary"
         >
           View all messages

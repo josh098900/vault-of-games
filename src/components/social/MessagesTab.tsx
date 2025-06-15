@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,8 @@ import {
   useSendMessage,
   useGroupConversations,
   useGroupMessages,
-  useSendGroupMessage
+  useSendGroupMessage,
+  useMarkMessageRead
 } from "@/hooks/useMessages";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,9 +46,24 @@ export const MessagesTab = ({
   const { data: groupMessages = [], isLoading: groupMessagesLoading } = useGroupMessages(selectedGroup || "");
   const sendMessage = useSendMessage();
   const sendGroupMessage = useSendGroupMessage();
+  const markMessageRead = useMarkMessageRead();
 
   const currentMessages = conversationType === "direct" ? messages : groupMessages;
   const currentLoading = conversationType === "direct" ? messagesLoading : groupMessagesLoading;
+
+  // Mark unread messages as read when opening a conversation
+  useEffect(() => {
+    if (selectedConversation && messages.length > 0) {
+      console.log("Marking messages as read for conversation:", selectedConversation);
+      const unreadMessages = messages.filter(
+        msg => msg.recipient_id === user?.id && !msg.is_read
+      );
+      
+      unreadMessages.forEach(msg => {
+        markMessageRead.mutate(msg.id);
+      });
+    }
+  }, [selectedConversation, messages, user?.id, markMessageRead]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
