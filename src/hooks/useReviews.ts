@@ -44,7 +44,8 @@ export const useReviews = (gameId?: string) => {
         .from("reviews")
         .select(`
           *,
-          games (title, cover_image_url)
+          games (title, cover_image_url),
+          profiles (username, display_name, avatar_url)
         `)
         .order("created_at", { ascending: false });
 
@@ -53,13 +54,12 @@ export const useReviews = (gameId?: string) => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching reviews:", error);
+        throw error;
+      }
       
-      // Transform the data to match our Review interface
-      return (data || []).map(review => ({
-        ...review,
-        profiles: null // We'll implement profiles later
-      })) as Review[];
+      return (data || []) as Review[];
     },
   });
 
@@ -67,6 +67,8 @@ export const useReviews = (gameId?: string) => {
   const createReview = useMutation({
     mutationFn: async (reviewData: CreateReviewData) => {
       if (!user) throw new Error("User not authenticated");
+
+      console.log("Creating review with data:", reviewData);
 
       const { data, error } = await supabase
         .from("reviews")
@@ -79,21 +81,31 @@ export const useReviews = (gameId?: string) => {
         })
         .select(`
           *,
-          games (title, cover_image_url)
+          games (title, cover_image_url),
+          profiles (username, display_name, avatar_url)
         `)
         .single();
 
-      if (error) throw error;
-      return { ...data, profiles: null };
+      if (error) {
+        console.error("Error creating review:", error);
+        throw error;
+      }
+      
+      return data as Review;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
+    },
+    onError: (error) => {
+      console.error("Mutation error:", error);
     },
   });
 
   // Update a review
   const updateReview = useMutation({
     mutationFn: async ({ reviewId, ...updateData }: { reviewId: string } & Partial<CreateReviewData>) => {
+      if (!user) throw new Error("User not authenticated");
+
       const { data, error } = await supabase
         .from("reviews")
         .update({
@@ -101,14 +113,20 @@ export const useReviews = (gameId?: string) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", reviewId)
+        .eq("user_id", user.id) // Ensure user can only update their own reviews
         .select(`
           *,
-          games (title, cover_image_url)
+          games (title, cover_image_url),
+          profiles (username, display_name, avatar_url)
         `)
         .single();
 
-      if (error) throw error;
-      return { ...data, profiles: null };
+      if (error) {
+        console.error("Error updating review:", error);
+        throw error;
+      }
+      
+      return data as Review;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -118,12 +136,18 @@ export const useReviews = (gameId?: string) => {
   // Delete a review
   const deleteReview = useMutation({
     mutationFn: async (reviewId: string) => {
+      if (!user) throw new Error("User not authenticated");
+
       const { error } = await supabase
         .from("reviews")
         .delete()
-        .eq("id", reviewId);
+        .eq("id", reviewId)
+        .eq("user_id", user.id); // Ensure user can only delete their own reviews
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting review:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -141,7 +165,7 @@ export const useReviews = (gameId?: string) => {
         .select("id")
         .eq("user_id", user.id)
         .eq("review_id", reviewId)
-        .single();
+        .maybeSingle();
 
       if (existingLike) {
         // Unlike
@@ -178,7 +202,7 @@ export const useReviews = (gameId?: string) => {
         .select("id")
         .eq("user_id", user.id)
         .eq("review_id", reviewId)
-        .single();
+        .maybeSingle();
 
       if (existingHelpful) {
         // Remove helpful
