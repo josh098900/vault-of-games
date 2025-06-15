@@ -64,7 +64,7 @@ const Social = () => {
         </div>
 
         <Tabs defaultValue={selectedConversation ? "messages" : "friends"} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="friends">Friends</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
