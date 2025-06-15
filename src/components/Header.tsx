@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -55,6 +56,12 @@ export const Header = () => {
       path: "/community",
       icon: <MessageCircle className="w-4 h-4" />,
       description: "Join conversations with gamers"
+    },
+    {
+      label: "Social Hub",
+      path: "/social",
+      icon: <Users className="w-4 h-4" />,
+      description: "Connect with friends and groups"
     },
     {
       label: "Leaderboards",
@@ -172,6 +179,13 @@ export const Header = () => {
                         <span className="text-xs text-muted-foreground">Join discussions</span>
                       </div>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/social")}>
+                      <Users className="w-4 h-4 mr-3" />
+                      <div className="flex flex-col">
+                        <span>Social Hub</span>
+                        <span className="text-xs text-muted-foreground">Connect with friends</span>
+                      </div>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/reviews")}>
                       <Star className="w-4 h-4 mr-3" />
                       <div className="flex flex-col">
@@ -248,6 +262,10 @@ export const Header = () => {
                     <DropdownMenuItem onClick={() => navigate("/community")}>
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Community
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/social")}>
+                      <Users className="w-4 h-4 mr-2" />
+                      Social Hub
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/reviews")}>
                       <Star className="w-4 h-4 mr-2" />
