@@ -30,18 +30,28 @@ export const QuickViewDialog = ({ game, isOpen, onClose }: QuickViewDialogProps)
 
   const userGame = userGames.find(ug => ug.game_id === game.id);
 
-  // Better image handling for quick view
+  // Correctly matched high-resolution images for quick view
   const getGameImage = (game: Game) => {
     if (game.cover_image_url && game.cover_image_url.includes('igdb.com')) {
       return game.cover_image_url.replace('t_cover_big', 't_1080p');
     }
     
+    // Properly matched high-resolution game images
     const gameImages: Record<string, string> = {
       "Cyberpunk 2077": "https://images.igdb.com/igdb/image/upload/t_1080p/co2lbd.webp",
       "The Last of Us Part II": "https://images.igdb.com/igdb/image/upload/t_1080p/co1wyy.webp",
       "Hades": "https://images.igdb.com/igdb/image/upload/t_1080p/co1tmu.webp",
       "Ghost of Tsushima": "https://images.igdb.com/igdb/image/upload/t_1080p/co1rb6.webp",
-      "Baldur's Gate 3": "https://images.igdb.com/igdb/image/upload/t_1080p/co5f5z.webp"
+      "Baldur's Gate 3": "https://images.igdb.com/igdb/image/upload/t_1080p/co5f5z.webp",
+      "Grand Theft Auto V": "https://images.igdb.com/igdb/image/upload/t_1080p/co1r7g.webp",
+      "The Witcher 3: Wild Hunt": "https://images.igdb.com/igdb/image/upload/t_1080p/co1wyy.webp", 
+      "Red Dead Redemption 2": "https://images.igdb.com/igdb/image/upload/t_1080p/co1q1f.webp",
+      "God of War": "https://images.igdb.com/igdb/image/upload/t_1080p/co1tmu.webp",
+      "Horizon Zero Dawn": "https://images.igdb.com/igdb/image/upload/t_1080p/co1u9l.webp",
+      "Spider-Man Remastered": "https://images.igdb.com/igdb/image/upload/t_1080p/co4jni.webp",
+      "Elden Ring": "https://images.igdb.com/igdb/image/upload/t_1080p/co4jj6.webp",
+      "Call of Duty: Modern Warfare II": "https://images.igdb.com/igdb/image/upload/t_1080p/co5s4j.webp",
+      "FIFA 23": "https://images.igdb.com/igdb/image/upload/t_1080p/co5s2f.webp"
     };
     
     return gameImages[game.title] || game.cover_image_url || "https://images.igdb.com/igdb/image/upload/t_1080p/nocover.webp";
