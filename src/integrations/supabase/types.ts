@@ -378,7 +378,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_discussion_views: {
+        Args: { discussion_uuid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       game_status: "playing" | "completed" | "wishlist" | "backlog" | "dropped"

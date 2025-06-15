@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, ThumbsUp, Eye, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface Discussion {
   id: string;
@@ -31,11 +32,16 @@ interface DiscussionCardProps {
   isLiked?: boolean;
 }
 
-export const DiscussionCard = ({ discussion, onLike, onClick, isLiked }: DiscussionCardProps) => {
+export const DiscussionCard = ({ discussion, onLike, isLiked }: DiscussionCardProps) => {
+  const navigate = useNavigate();
   const liked = isLiked ?? discussion.isLiked ?? false;
 
+  const handleCardClick = () => {
+    navigate(`/community/discussion/${discussion.id}`);
+  };
+
   return (
-    <Card className="gaming-card hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onClick?.(discussion.id)}>
+    <Card className="gaming-card hover:border-primary/30 transition-colors cursor-pointer" onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <Avatar className="w-10 h-10">
