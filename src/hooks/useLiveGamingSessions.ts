@@ -18,12 +18,13 @@ export const useLiveGamingSessions = () => {
       console.log('Fetching live gaming sessions...');
       
       try {
+        // Use a more explicit approach to join the tables
         const { data: sessions, error } = await supabase
           .from('live_gaming_sessions')
           .select(`
             *,
-            games(title, cover_image_url),
-            profiles(username, display_name, avatar_url),
+            games!live_gaming_sessions_game_id_fkey(title, cover_image_url),
+            profiles!live_gaming_sessions_user_id_fkey(username, display_name, avatar_url),
             gaming_session_participants(
               id,
               user_id,
