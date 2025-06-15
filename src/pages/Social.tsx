@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,9 +9,21 @@ import { RecommendationsTab } from "@/components/social/RecommendationsTab";
 import { EventsTab } from "@/components/social/EventsTab";
 import { MessagesTab } from "@/components/social/MessagesTab";
 import { SocialActivityFeed } from "@/components/social/SocialActivityFeed";
+import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const Social = () => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+
+  // Handle navigation from message dropdown
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.selectedConversation) {
+      setSelectedConversation(state.selectedConversation);
+    }
+  }, [location.state]);
 
   if (loading) {
     return (
@@ -36,6 +47,7 @@ const Social = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
+      {/* Social Activity Feed and Hero Section */}
       <section className="py-16 px-4 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-red-600/20">
         <div className="container mx-auto text-center">
           <h1 className="text-4xl font-bold mb-4 text-gradient">Social Gaming Hub</h1>
@@ -51,7 +63,7 @@ const Social = () => {
           <SocialActivityFeed />
         </div>
 
-        <Tabs defaultValue="friends" className="w-full">
+        <Tabs defaultValue={selectedConversation ? "messages" : "friends"} className="w-full">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="friends">Friends</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
@@ -66,7 +78,10 @@ const Social = () => {
           </TabsContent>
           
           <TabsContent value="messages" className="mt-6">
-            <MessagesTab />
+            <MessagesTab 
+              initialSelectedConversation={selectedConversation}
+              onConversationChange={setSelectedConversation}
+            />
           </TabsContent>
           
           <TabsContent value="groups" className="mt-6">

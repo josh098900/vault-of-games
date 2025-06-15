@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -24,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { NavigationDropdown } from "./NavigationDropdown";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { MessageDropdown } from "./MessageDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
 
 export const Header = () => {
@@ -109,8 +109,9 @@ export const Header = () => {
         <div className="flex items-center space-x-2 md:space-x-3">
           {user ? (
             <>
-              {/* Notifications - always visible for logged in users */}
+              {/* Notifications and Messages - always visible for logged in users */}
               <NotificationDropdown />
+              <MessageDropdown />
               
               {/* Desktop User Menu */}
               <div className="hidden md:block">

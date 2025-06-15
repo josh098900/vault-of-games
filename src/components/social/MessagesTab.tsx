@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +9,18 @@ import { MessageCircle, Send, ArrowLeft } from "lucide-react";
 import { useConversations, useMessages, useSendMessage } from "@/hooks/useMessages";
 import { formatDistanceToNow } from "date-fns";
 
-export const MessagesTab = () => {
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+interface MessagesTabProps {
+  initialSelectedConversation?: string | null;
+  onConversationChange?: (conversationId: string | null) => void;
+}
+
+export const MessagesTab = ({ 
+  initialSelectedConversation, 
+  onConversationChange 
+}: MessagesTabProps) => {
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(
+    initialSelectedConversation || null
+  );
   const [messageContent, setMessageContent] = useState("");
   
   const { data: conversations = [], isLoading: conversationsLoading } = useConversations();
@@ -33,6 +42,19 @@ export const MessagesTab = () => {
     }
   };
 
+  // Update selected conversation when initial prop changes
+  useEffect(() => {
+    if (initialSelectedConversation) {
+      setSelectedConversation(initialSelectedConversation);
+    }
+  }, [initialSelectedConversation]);
+
+  // Notify parent when conversation changes
+  const handleConversationSelect = (conversationId: string | null) => {
+    setSelectedConversation(conversationId);
+    onConversationChange?.(conversationId);
+  };
+
   if (selectedConversation) {
     const conversation = conversations.find(conv => {
       const otherUserId = conv.user1_id !== conv.user2_id ? 
@@ -48,7 +70,7 @@ export const MessagesTab = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedConversation(null)}
+              onClick={() => handleConversationSelect(null)}
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -169,7 +191,7 @@ export const MessagesTab = () => {
                 <div
                   key={conversation.id}
                   className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => setSelectedConversation(otherUserId)}
+                  onClick={() => handleConversationSelect(otherUserId)}
                 >
                   <Avatar>
                     <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
