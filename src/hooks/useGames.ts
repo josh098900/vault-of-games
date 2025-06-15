@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Game } from "./useUserGames";
 
 export const useGames = () => {
-  const { data: games = [], isLoading } = useQuery({
+  return useQuery({
     queryKey: ["games"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -16,9 +16,4 @@ export const useGames = () => {
       return data as Game[];
     },
   });
-
-  return {
-    games,
-    isLoading,
-  };
 };

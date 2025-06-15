@@ -15,21 +15,40 @@ export const useEnhancedUserPresence = (userId: string) => {
   const query = useQuery({
     queryKey: ['enhanced-user-presence', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get the user presence
+      const { data: presenceData, error: presenceError } = await supabase
         .from('user_presence')
-        .select(`
-          *,
-          games(title, cover_image_url)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user presence:', error);
-        throw error;
+      if (presenceError && presenceError.code !== 'PGRST116') {
+        console.error('Error fetching user presence:', presenceError);
+        throw presenceError;
       }
 
-      return data;
+      if (!presenceData) {
+        return null;
+      }
+
+      // If user has a current game, fetch game details separately
+      let gameData = null;
+      if (presenceData.current_game_id) {
+        const { data: game, error: gameError } = await supabase
+          .from('games')
+          .select('title, cover_image_url')
+          .eq('id', presenceData.current_game_id)
+          .single();
+
+        if (!gameError) {
+          gameData = game;
+        }
+      }
+
+      return {
+        ...presenceData,
+        games: gameData
+      } as EnhancedUserPresence;
     },
     enabled: !!userId,
   });

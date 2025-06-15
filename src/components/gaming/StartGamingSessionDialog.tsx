@@ -19,7 +19,7 @@ export const StartGamingSessionDialog = () => {
   const [maxParticipants, setMaxParticipants] = useState<number | undefined>();
   const [isPublic, setIsPublic] = useState(true);
 
-  const { data: games = [] } = useGames();
+  const { games = [], isLoading } = useGames();
   const createSession = useCreateGamingSession();
 
   const handleSubmit = (e: React.FormEvent) => {
