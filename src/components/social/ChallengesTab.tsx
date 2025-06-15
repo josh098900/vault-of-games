@@ -8,6 +8,7 @@ import { useChallenges } from "@/hooks/useChallenges";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { CreateChallengeDialog } from "./CreateChallengeDialog";
 
 export const ChallengesTab = () => {
   const { challenges, myChallenges, isLoading, joinChallenge } = useChallenges();
@@ -83,10 +84,12 @@ export const ChallengesTab = () => {
           <h2 className="text-2xl font-bold">Gaming Challenges</h2>
           <p className="text-muted-foreground">Take on challenges and compete with friends</p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Challenge
-        </Button>
+        <CreateChallengeDialog>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Challenge
+          </Button>
+        </CreateChallengeDialog>
       </div>
 
       {myChallenges.length > 0 && (
