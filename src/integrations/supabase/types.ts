@@ -887,6 +887,41 @@ export type Database = {
           },
         ]
       }
+      live_session_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_gaming_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_conversations: {
         Row: {
           created_at: string

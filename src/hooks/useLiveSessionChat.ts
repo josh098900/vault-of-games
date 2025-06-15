@@ -29,7 +29,7 @@ export const useLiveSessionMessages = (sessionId: string) => {
       try {
         // First, get the messages without the join
         const { data: messages, error: messagesError } = await supabase
-          .from('live_session_messages' as any)
+          .from('live_session_messages')
           .select('*')
           .eq('session_id', sessionId)
           .order('created_at', { ascending: true });
@@ -118,7 +118,7 @@ export const useSendSessionMessage = () => {
 
       try {
         const { data, error } = await supabase
-          .from('live_session_messages' as any)
+          .from('live_session_messages')
           .insert({
             session_id: sessionId,
             user_id: user.id,
