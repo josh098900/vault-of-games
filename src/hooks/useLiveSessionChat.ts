@@ -27,20 +27,50 @@ export const useLiveSessionMessages = (sessionId: string) => {
       if (!sessionId) return [];
 
       try {
-        const { data, error } = await supabase
+        // First, get the messages without the join
+        const { data: messages, error: messagesError } = await supabase
           .from('live_session_messages' as any)
-          .select(`
-            *,
-            profiles(username, display_name, avatar_url)
-          `)
+          .select('*')
           .eq('session_id', sessionId)
           .order('created_at', { ascending: true });
 
-        if (error) {
-          console.error('Error fetching messages:', error);
-          throw error;
+        if (messagesError) {
+          console.error('Error fetching messages:', messagesError);
+          throw messagesError;
         }
-        return (data || []) as unknown as LiveSessionMessage[];
+
+        if (!messages || messages.length === 0) {
+          return [];
+        }
+
+        // Get unique user IDs from messages
+        const userIds = [...new Set(messages.map((msg: any) => msg.user_id))];
+
+        // Fetch profiles for all users
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          // Continue without profiles if fetch fails
+        }
+
+        // Combine messages with profiles
+        const messagesWithProfiles = messages.map((message: any) => {
+          const profile = profiles?.find((p) => p.id === message.user_id);
+          return {
+            ...message,
+            profiles: profile ? {
+              username: profile.username,
+              display_name: profile.display_name,
+              avatar_url: profile.avatar_url
+            } : undefined
+          };
+        });
+
+        return messagesWithProfiles as LiveSessionMessage[];
       } catch (error) {
         console.error('Failed to fetch session messages:', error);
         return [];
@@ -94,17 +124,29 @@ export const useSendSessionMessage = () => {
             user_id: user.id,
             content: content.trim()
           })
-          .select(`
-            *,
-            profiles(username, display_name, avatar_url)
-          `)
+          .select('*')
           .single();
 
         if (error) {
           console.error('Error sending message:', error);
           throw error;
         }
-        return data as unknown as LiveSessionMessage;
+
+        // Get user profile separately
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, display_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        return {
+          ...data,
+          profiles: profile ? {
+            username: profile.username,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url
+          } : undefined
+        } as LiveSessionMessage;
       } catch (error) {
         console.error('Failed to send message:', error);
         throw error;
