@@ -40,6 +40,8 @@ export const useReviews = (gameId?: string) => {
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["reviews", gameId],
     queryFn: async () => {
+      console.log("Fetching reviews for gameId:", gameId);
+      
       let query = supabase
         .from("reviews")
         .select(`
@@ -59,14 +61,24 @@ export const useReviews = (gameId?: string) => {
         throw error;
       }
       
-      return (data || []) as Review[];
+      // Transform the data to handle potential null profiles
+      const transformedData = (data || []).map(review => ({
+        ...review,
+        profiles: review.profiles || null
+      }));
+      
+      console.log("Fetched reviews:", transformedData);
+      return transformedData as Review[];
     },
   });
 
   // Create a new review
   const createReview = useMutation({
     mutationFn: async (reviewData: CreateReviewData) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        console.error("User not authenticated");
+        throw new Error("User not authenticated");
+      }
 
       console.log("Creating review with data:", reviewData);
 
@@ -84,14 +96,25 @@ export const useReviews = (gameId?: string) => {
           games (title, cover_image_url),
           profiles (username, display_name, avatar_url)
         `)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error creating review:", error);
         throw error;
       }
       
-      return data as Review;
+      if (!data) {
+        throw new Error("No data returned from review creation");
+      }
+      
+      // Transform the data to handle potential null profiles
+      const transformedData = {
+        ...data,
+        profiles: data.profiles || null
+      };
+      
+      console.log("Created review:", transformedData);
+      return transformedData as Review;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -104,7 +127,10 @@ export const useReviews = (gameId?: string) => {
   // Update a review
   const updateReview = useMutation({
     mutationFn: async ({ reviewId, ...updateData }: { reviewId: string } & Partial<CreateReviewData>) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        console.error("User not authenticated");
+        throw new Error("User not authenticated");
+      }
 
       const { data, error } = await supabase
         .from("reviews")
@@ -119,14 +145,24 @@ export const useReviews = (gameId?: string) => {
           games (title, cover_image_url),
           profiles (username, display_name, avatar_url)
         `)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error updating review:", error);
         throw error;
       }
       
-      return data as Review;
+      if (!data) {
+        throw new Error("No data returned from review update");
+      }
+      
+      // Transform the data to handle potential null profiles
+      const transformedData = {
+        ...data,
+        profiles: data.profiles || null
+      };
+      
+      return transformedData as Review;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -136,7 +172,10 @@ export const useReviews = (gameId?: string) => {
   // Delete a review
   const deleteReview = useMutation({
     mutationFn: async (reviewId: string) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        console.error("User not authenticated");
+        throw new Error("User not authenticated");
+      }
 
       const { error } = await supabase
         .from("reviews")
@@ -157,7 +196,10 @@ export const useReviews = (gameId?: string) => {
   // Like/unlike a review
   const toggleLike = useMutation({
     mutationFn: async (reviewId: string) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        console.error("User not authenticated");
+        throw new Error("User not authenticated");
+      }
 
       // Check if user already liked this review
       const { data: existingLike } = await supabase
@@ -194,7 +236,10 @@ export const useReviews = (gameId?: string) => {
   // Mark review as helpful
   const toggleHelpful = useMutation({
     mutationFn: async (reviewId: string) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        console.error("User not authenticated");
+        throw new Error("User not authenticated");
+      }
 
       // Check if user already marked this as helpful
       const { data: existingHelpful } = await supabase
