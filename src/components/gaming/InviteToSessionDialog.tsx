@@ -50,7 +50,7 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         .select(`
           id,
           follower_id,
-          profiles!user_follows_follower_id_fkey(
+          profiles!follower_id(
             id,
             username,
             display_name,

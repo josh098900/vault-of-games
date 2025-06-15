@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,15 +45,15 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
         .from('live_gaming_sessions')
         .select(`
           *,
-          games!live_gaming_sessions_game_id_fkey(title, cover_image_url, description, genre, platform),
-          profiles!live_gaming_sessions_user_id_fkey(username, display_name, avatar_url),
+          games!game_id(title, cover_image_url, description, genre, platform),
+          profiles!user_id(username, display_name, avatar_url),
           gaming_session_participants(
             id,
             user_id,
             role,
             joined_at,
             left_at,
-            profiles!gaming_session_participants_user_id_fkey(username, display_name, avatar_url)
+            profiles!user_id(username, display_name, avatar_url)
           )
         `)
         .eq('id', sessionId)
@@ -95,8 +96,8 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
   }
 
   const isHost = session.user_id === user?.id;
-  const activeParticipants = (session.gaming_session_participants || []).filter((p: Participant) => !p.left_at);
-  const isParticipant = activeParticipants.some((p: Participant) => p.user_id === user?.id);
+  const activeParticipants = (session.gaming_session_participants || []).filter((p: any) => !p.left_at);
+  const isParticipant = activeParticipants.some((p: any) => p.user_id === user?.id);
 
   const getSessionTypeIcon = (type: string) => {
     switch (type) {
@@ -274,7 +275,7 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
 
           {/* Participants */}
           <LiveSessionParticipants 
-            participants={activeParticipants}
+            participants={activeParticipants as Participant[]}
             sessionType={session.session_type}
           />
         </div>
