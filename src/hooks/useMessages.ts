@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,38 +35,6 @@ export interface MessageReaction {
   };
 }
 
-export interface GroupConversation {
-  id: string;
-  name: string;
-  description: string | null;
-  avatar_url: string | null;
-  created_by: string;
-  is_private: boolean;
-  member_count: number;
-  last_message_at: string;
-  created_at: string;
-  updated_at: string;
-  last_message?: string;
-  unread_count: number;
-}
-
-export interface GroupMessage {
-  id: string;
-  group_id: string;
-  sender_id: string;
-  content: string;
-  parent_message_id?: string;
-  thread_count: number;
-  created_at: string;
-  updated_at: string;
-  sender_profile?: {
-    username: string | null;
-    display_name: string | null;
-    avatar_url: string | null;
-  };
-  reactions?: MessageReaction[];
-}
-
 export interface UserPresence {
   user_id: string;
   status: 'online' | 'away' | 'busy' | 'offline';
@@ -79,7 +48,7 @@ export interface Conversation {
   user2_id: string;
   last_message_at: string;
   created_at: string;
-  other_user_id: string; // Add this for easier access
+  other_user_id: string;
   other_user_profile?: {
     username: string | null;
     display_name: string | null;
@@ -162,8 +131,6 @@ export const useMessages = (otherUserId: string) => {
     queryFn: async () => {
       if (!user || !otherUserId) return [];
 
-      console.log("Fetching messages between:", user.id, "and", otherUserId);
-
       // Get all messages between current user and the other user
       const { data: messages, error } = await supabase
         .from("direct_messages")
@@ -175,8 +142,6 @@ export const useMessages = (otherUserId: string) => {
         console.error("Error fetching messages:", error);
         throw error;
       }
-      
-      console.log("Raw messages:", messages);
 
       if (!messages || messages.length === 0) return [];
 
@@ -201,111 +166,9 @@ export const useMessages = (otherUserId: string) => {
         sender_profile: profileMap.get(message.sender_id) || null
       }));
 
-      console.log("Messages with profiles:", messagesWithProfiles);
       return messagesWithProfiles as DirectMessage[];
     },
     enabled: !!user && !!otherUserId,
-  });
-};
-
-export const useGroupConversations = () => {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ["group_conversations", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-
-      console.log("Fetching group conversations for user:", user.id);
-
-      // First get all groups the user is a member of
-      const { data: membershipData, error: membershipError } = await supabase
-        .from("group_conversation_members")
-        .select("group_id")
-        .eq("user_id", user.id);
-
-      if (membershipError) {
-        console.error("Error fetching group memberships:", membershipError);
-        throw membershipError;
-      }
-
-      console.log("User memberships:", membershipData);
-
-      if (!membershipData || membershipData.length === 0) {
-        console.log("No group memberships found");
-        return [];
-      }
-
-      const groupIds = membershipData.map(m => m.group_id);
-
-      // Then get the group details for those groups
-      const { data: groups, error } = await supabase
-        .from("group_conversations")
-        .select("*")
-        .in("id", groupIds)
-        .order("last_message_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching groups:", error);
-        throw error;
-      }
-      
-      console.log("Groups fetched:", groups);
-
-      // Add unread_count to each group (defaulting to 0 for now)
-      const groupsWithUnreadCount = groups?.map(group => ({
-        ...group,
-        unread_count: 0
-      })) || [];
-
-      return groupsWithUnreadCount as GroupConversation[];
-    },
-    enabled: !!user,
-  });
-};
-
-export const useGroupMessages = (groupId: string) => {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ["group_messages", groupId],
-    queryFn: async () => {
-      if (!user || !groupId) return [];
-
-      const { data: messages, error } = await supabase
-        .from("group_messages")
-        .select(`
-          *
-        `)
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-
-      // Get unique sender IDs to fetch their profiles
-      const senderIds = [...new Set(messages?.map(msg => msg.sender_id) || [])];
-      
-      // Fetch profiles for all senders
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url")
-        .in("id", senderIds);
-
-      // Create a profile lookup map
-      const profileMap = new Map();
-      profiles?.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
-
-      // Attach profiles to messages
-      const messagesWithProfiles = messages?.map(message => ({
-        ...message,
-        sender_profile: profileMap.get(message.sender_id) || null
-      })) || [];
-
-      return messagesWithProfiles as GroupMessage[];
-    },
-    enabled: !!user && !!groupId,
   });
 };
 
@@ -313,17 +176,9 @@ export const useMessageReactions = (messageId: string, isGroupMessage = false) =
   return useQuery({
     queryKey: ["message_reactions", messageId, isGroupMessage],
     queryFn: async () => {
-      if (!messageId) {
-        console.log("No messageId provided for reactions query");
-        return [];
-      }
-
-      console.log("=== Fetching Reactions ===");
-      console.log("Message ID:", messageId);
-      console.log("Is group message:", isGroupMessage);
+      if (!messageId) return [];
 
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
-      console.log("Using table:", table);
       
       const { data: reactions, error } = await supabase
         .from(table)
@@ -336,15 +191,7 @@ export const useMessageReactions = (messageId: string, isGroupMessage = false) =
         `)
         .eq("message_id", messageId);
 
-      if (error) {
-        console.error("=== Reactions Query Error ===", error);
-        throw error;
-      }
-
-      console.log("=== Reactions Query Success ===");
-      console.log("Raw data:", reactions);
-      console.log("Count:", reactions?.length || 0);
-
+      if (error) throw error;
       return reactions || [];
     },
     enabled: !!messageId,
@@ -391,7 +238,7 @@ export const useUnreadMessageCount = () => {
     enabled: !!user,
   });
 
-  // Set up real-time subscription for new messages - only for messages TO the current user
+  // Set up real-time subscription for new messages
   useEffect(() => {
     if (!user) return;
 
@@ -406,8 +253,6 @@ export const useUnreadMessageCount = () => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New message received:', payload);
-          // Only refetch if the message is TO the current user (not FROM them)
           if (payload.new && payload.new.recipient_id === user.id && payload.new.sender_id !== user.id) {
             query.refetch();
             queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
@@ -423,8 +268,6 @@ export const useUnreadMessageCount = () => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Message updated:', payload);
-          // Refetch when messages are marked as read
           query.refetch();
           queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
         }
@@ -465,41 +308,6 @@ export const useSendMessage = () => {
   });
 };
 
-export const useSendGroupMessage = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ 
-      groupId, 
-      content, 
-      parentMessageId 
-    }: { 
-      groupId: string; 
-      content: string; 
-      parentMessageId?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from("group_messages")
-        .insert({
-          group_id: groupId,
-          sender_id: user!.id,
-          content,
-          parent_message_id: parentMessageId,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (_, { groupId }) => {
-      queryClient.invalidateQueries({ queryKey: ["group_messages", groupId] });
-      queryClient.invalidateQueries({ queryKey: ["group_conversations", user?.id] });
-    },
-  });
-};
-
 export const useAddReaction = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -514,15 +322,11 @@ export const useAddReaction = () => {
       reactionType: string; 
       isGroupMessage?: boolean;
     }) => {
-      console.log("=== Add Reaction Mutation ===");
-      console.log("Input:", { messageId, reactionType, isGroupMessage, userId: user?.id });
-      
       if (!user) {
         throw new Error("User not authenticated");
       }
       
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
-      console.log("Using table:", table);
       
       // First check if reaction already exists
       const { data: existingReaction, error: checkError } = await supabase
@@ -533,17 +337,9 @@ export const useAddReaction = () => {
         .eq("reaction_type", reactionType)
         .maybeSingle();
 
-      if (checkError) {
-        console.error("Error checking existing reaction:", checkError);
-        throw checkError;
-      }
+      if (checkError) throw checkError;
+      if (existingReaction) return existingReaction;
 
-      if (existingReaction) {
-        console.log("Reaction already exists, skipping insert:", existingReaction);
-        return existingReaction;
-      }
-
-      console.log("Inserting new reaction...");
       const { data, error } = await supabase
         .from(table)
         .insert({
@@ -555,31 +351,20 @@ export const useAddReaction = () => {
         .single();
 
       if (error) {
-        console.error("=== Insert Error ===", error);
-        if (error.code === '23505') {
-          console.log("Duplicate key error - reaction already exists");
-          return null;
-        }
+        if (error.code === '23505') return null;
         throw error;
       }
       
-      console.log("=== Reaction Added Successfully ===", data);
       return data;
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
-      console.log("=== Add Reaction Success - Invalidating Queries ===");
-      // Invalidate and refetch the reactions query
       queryClient.invalidateQueries({ 
         queryKey: ["message_reactions", messageId, isGroupMessage] 
       });
-      // Force refetch
       queryClient.refetchQueries({ 
         queryKey: ["message_reactions", messageId, isGroupMessage] 
       });
     },
-    onError: (error) => {
-      console.error("=== Add Reaction Mutation Error ===", error);
-    }
   });
 };
 
@@ -597,15 +382,11 @@ export const useRemoveReaction = () => {
       reactionType: string; 
       isGroupMessage?: boolean;
     }) => {
-      console.log("=== Remove Reaction Mutation ===");
-      console.log("Input:", { messageId, reactionType, isGroupMessage, userId: user?.id });
-      
       if (!user) {
         throw new Error("User not authenticated");
       }
       
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
-      console.log("Using table:", table);
       
       const { error } = await supabase
         .from(table)
@@ -614,27 +395,16 @@ export const useRemoveReaction = () => {
         .eq("user_id", user.id)
         .eq("reaction_type", reactionType);
 
-      if (error) {
-        console.error("=== Remove Reaction Error ===", error);
-        throw error;
-      }
-      
-      console.log("=== Reaction Removed Successfully ===");
+      if (error) throw error;
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
-      console.log("=== Remove Reaction Success - Invalidating Queries ===");
-      // Invalidate and refetch the reactions query
       queryClient.invalidateQueries({ 
         queryKey: ["message_reactions", messageId, isGroupMessage] 
       });
-      // Force refetch
       queryClient.refetchQueries({ 
         queryKey: ["message_reactions", messageId, isGroupMessage] 
       });
     },
-    onError: (error) => {
-      console.error("=== Remove Reaction Mutation Error ===", error);
-    }
   });
 };
 
@@ -655,92 +425,6 @@ export const useUpdatePresence = () => {
         });
 
       if (error) throw error;
-    },
-  });
-};
-
-export const useCreateGroupConversation = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ 
-      name, 
-      description, 
-      isPrivate, 
-      memberIds 
-    }: { 
-      name: string; 
-      description?: string; 
-      isPrivate?: boolean; 
-      memberIds: string[];
-    }) => {
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      // Step 1: Create the group conversation
-      const groupData = {
-        name: name.trim(),
-        description: description?.trim() || null,
-        is_private: isPrivate || false,
-        created_by: user.id,
-      };
-
-      const { data: group, error: groupError } = await supabase
-        .from("group_conversations")
-        .insert(groupData)
-        .select()
-        .single();
-
-      if (groupError) {
-        throw new Error(`Failed to create group: ${groupError.message}`);
-      }
-
-      // Step 2: Verify the creator was automatically added as admin by trigger
-      const { data: creatorMembership, error: membershipCheckError } = await supabase
-        .from("group_conversation_members")
-        .select("*")
-        .eq("group_id", group.id)
-        .eq("user_id", user.id)
-        .single();
-
-      if (membershipCheckError) {
-        // If the trigger didn't work, manually add the creator
-        const { error: manualAddError } = await supabase
-          .from("group_conversation_members")
-          .insert({
-            group_id: group.id,
-            user_id: user.id,
-            role: 'admin',
-          });
-
-        if (manualAddError) {
-          throw new Error(`Failed to add creator to group: ${manualAddError.message}`);
-        }
-      }
-
-      // Step 3: Add selected members
-      if (memberIds.length > 0) {
-        const members = memberIds.map(memberId => ({
-          group_id: group.id,
-          user_id: memberId,
-          role: 'member' as const,
-        }));
-
-        const { error: membersError } = await supabase
-          .from("group_conversation_members")
-          .insert(members);
-
-        if (membersError) {
-          throw new Error(`Failed to add members: ${membersError.message}`);
-        }
-      }
-
-      return group;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["group_conversations", user?.id] });
     },
   });
 };

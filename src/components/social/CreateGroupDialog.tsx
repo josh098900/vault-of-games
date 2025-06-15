@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { X, Users, Plus } from "lucide-react";
-import { useCreateGroupConversation } from "@/hooks/useMessages";
+import { useGroups } from "@/hooks/useGroups";
 import { useFriends } from "@/hooks/useFriends";
 import { toast } from "@/hooks/use-toast";
 
@@ -29,10 +30,8 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   
-  const { following: friends = [] } = useFriends();
-  const createGroup = useCreateGroupConversation();
+  const { createGroup } = useGroups();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +59,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
         name: name.trim(),
         description: description.trim() || undefined,
         isPrivate,
-        memberIds: selectedMembers,
       });
 
       toast({
@@ -75,7 +73,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
       setName("");
       setDescription("");
       setIsPrivate(false);
-      setSelectedMembers([]);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create group";
       
@@ -87,14 +84,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
     }
   };
 
-  const toggleMember = (userId: string) => {
-    setSelectedMembers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
   const handleDialogOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
@@ -102,7 +91,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
       setName("");
       setDescription("");
       setIsPrivate(false);
-      setSelectedMembers([]);
     }
   };
 
@@ -115,10 +103,10 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Create Group Chat
+            Create Gaming Group
           </DialogTitle>
           <DialogDescription>
-            Create a new group conversation with your friends. You can add more members later.
+            Create a new gaming community. You can add members after creation.
           </DialogDescription>
         </DialogHeader>
 
@@ -155,74 +143,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
               onCheckedChange={setIsPrivate}
             />
             <Label htmlFor="private">Private Group</Label>
-          </div>
-
-          <div>
-            <Label>Add Members (Optional)</Label>
-            <p className="text-sm text-muted-foreground mb-2">
-              You can create a group with just yourself and add members later
-            </p>
-            {friends.length > 0 ? (
-              <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                {friends.map((friend) => (
-                  <div
-                    key={friend.profiles.id}
-                    className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:bg-muted"
-                    onClick={() => toggleMember(friend.profiles.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={friend.profiles.avatar_url || ""} />
-                        <AvatarFallback>
-                          {friend.profiles.display_name?.[0] || friend.profiles.username?.[0] || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">
-                        {friend.profiles.display_name || friend.profiles.username}
-                      </span>
-                    </div>
-                    {selectedMembers.includes(friend.profiles.id) && (
-                      <Badge variant="default" className="text-xs">
-                        Selected
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground mt-2">
-                No friends available to add. You can still create the group and invite members later.
-              </p>
-            )}
-
-            {selectedMembers.length > 0 && (
-              <div className="mt-3">
-                <Label className="text-sm text-muted-foreground">
-                  Selected Members ({selectedMembers.length})
-                </Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {selectedMembers.map((memberId) => {
-                    const friend = friends.find(f => f.profiles.id === memberId);
-                    return (
-                      <Badge 
-                        key={memberId} 
-                        variant="secondary" 
-                        className="text-xs flex items-center gap-1"
-                      >
-                        {friend?.profiles.display_name || friend?.profiles.username}
-                        <X 
-                          className="w-3 h-3 cursor-pointer" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleMember(memberId);
-                          }}
-                        />
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex gap-2 pt-4">
