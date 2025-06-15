@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Discover from "./pages/Discover";
 import Library from "./pages/Library";
+import Social from "./pages/Social";
 import Community from "./pages/Community";
 import DiscussionDetail from "./pages/DiscussionDetail";
 import Reviews from "./pages/Reviews";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/social" element={<Social />} />
             <Route path="/community" element={<Community />} />
             <Route path="/community/discussion/:id" element={<DiscussionDetail />} />
             <Route path="/reviews" element={<Reviews />} />
