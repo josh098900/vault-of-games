@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      achievement_notifications: {
+        Row: {
+          achievement_data: Json | null
+          achievement_description: string | null
+          achievement_title: string
+          achievement_type: string
+          created_at: string
+          expires_at: string | null
+          game_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_data?: Json | null
+          achievement_description?: string | null
+          achievement_title: string
+          achievement_type: string
+          created_at?: string
+          expires_at?: string | null
+          game_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_data?: Json | null
+          achievement_description?: string | null
+          achievement_title?: string
+          achievement_type?: string
+          created_at?: string
+          expires_at?: string | null
+          game_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_participants: {
         Row: {
           challenge_id: string
@@ -573,6 +609,41 @@ export type Database = {
         }
         Relationships: []
       }
+      gaming_session_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          left_at: string | null
+          role: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          role?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          role?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gaming_session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_gaming_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_conversation_members: {
         Row: {
           group_id: string
@@ -755,6 +826,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      live_gaming_sessions: {
+        Row: {
+          created_at: string
+          current_participants: number | null
+          description: string | null
+          ended_at: string | null
+          game_id: string
+          id: string
+          is_public: boolean | null
+          max_participants: number | null
+          session_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string | null
+          ended_at?: string | null
+          game_id: string
+          id?: string
+          is_public?: boolean | null
+          max_participants?: number | null
+          session_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string | null
+          ended_at?: string | null
+          game_id?: string
+          id?: string
+          is_public?: boolean | null
+          max_participants?: number | null
+          session_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       message_conversations: {
         Row: {
@@ -1113,19 +1229,34 @@ export type Database = {
       }
       user_presence: {
         Row: {
+          current_game_id: string | null
+          custom_status: string | null
+          game_status: string | null
           last_seen: string
+          mood: string | null
+          progress_data: Json | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          current_game_id?: string | null
+          custom_status?: string | null
+          game_status?: string | null
           last_seen?: string
+          mood?: string | null
+          progress_data?: Json | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          current_game_id?: string | null
+          custom_status?: string | null
+          game_status?: string | null
           last_seen?: string
+          mood?: string | null
+          progress_data?: Json | null
           status?: string
           updated_at?: string
           user_id?: string

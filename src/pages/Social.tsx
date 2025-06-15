@@ -9,13 +9,20 @@ import { RecommendationsTab } from "@/components/social/RecommendationsTab";
 import { EventsTab } from "@/components/social/EventsTab";
 import { MessagesTab } from "@/components/social/MessagesTab";
 import { SocialActivityFeed } from "@/components/social/SocialActivityFeed";
+import { LiveGamingSessionCard } from "@/components/gaming/LiveGamingSessionCard";
+import { StartGamingSessionDialog } from "@/components/gaming/StartGamingSessionDialog";
+import { AchievementNotificationToast } from "@/components/gaming/AchievementNotificationToast";
+import { useLiveGamingSessions } from "@/hooks/useLiveGamingSessions";
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Play, Users } from "lucide-react";
 
 const Social = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const { data: liveSessions = [], isLoading: sessionsLoading } = useLiveGamingSessions();
 
   // Handle navigation from message dropdown
   useEffect(() => {
@@ -43,9 +50,55 @@ const Social = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  const LiveSessionsTab = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Live Gaming Sessions</h2>
+          <p className="text-muted-foreground">
+            Join friends who are currently playing or start your own session
+          </p>
+        </div>
+        <StartGamingSessionDialog />
+      </div>
+
+      {sessionsLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : liveSessions.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Play className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Active Sessions</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              No one is currently hosting a gaming session. Be the first to start one!
+            </p>
+            <StartGamingSessionDialog />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {liveSessions.map((session) => (
+            <LiveGamingSessionCard key={session.id} session={session} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Achievement notifications overlay */}
+      <AchievementNotificationToast />
       
       {/* Social Activity Feed and Hero Section */}
       <section className="py-16 px-4 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-red-600/20">
@@ -63,14 +116,19 @@ const Social = () => {
           <SocialActivityFeed />
         </div>
 
-        <Tabs defaultValue={selectedConversation ? "messages" : "friends"} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue={selectedConversation ? "messages" : "live-sessions"} className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="live-sessions">Live Sessions</TabsTrigger>
             <TabsTrigger value="friends">Friends</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="live-sessions" className="mt-6">
+            <LiveSessionsTab />
+          </TabsContent>
           
           <TabsContent value="friends" className="mt-6">
             <FriendsTab />
