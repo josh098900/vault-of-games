@@ -47,6 +47,13 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
       return;
     }
 
+    console.log("Submitting group creation form:", {
+      name: name.trim(),
+      description: description.trim(),
+      isPrivate,
+      memberIds: selectedMembers
+    });
+
     try {
       const group = await createGroup.mutateAsync({
         name: name.trim(),
@@ -55,21 +62,26 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
         memberIds: selectedMembers,
       });
 
+      console.log("Group created successfully:", group);
+
       toast({
         title: "Success",
         description: `Group "${name}" created successfully!`,
       });
 
       onGroupCreated?.(group.id);
+      
+      // Reset form and close dialog
       setOpen(false);
       setName("");
       setDescription("");
       setIsPrivate(false);
       setSelectedMembers([]);
     } catch (error) {
+      console.error("Group creation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create group",
+        description: error instanceof Error ? error.message : "Failed to create group",
         variant: "destructive",
       });
     }
@@ -83,8 +95,19 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
     );
   };
 
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      // Reset form when closing
+      setName("");
+      setDescription("");
+      setIsPrivate(false);
+      setSelectedMembers([]);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -95,19 +118,20 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
             Create Group Chat
           </DialogTitle>
           <DialogDescription>
-            Create a new group conversation with your friends
+            Create a new group conversation with your friends. You can add more members later.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Group Name</Label>
+            <Label htmlFor="name">Group Name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter group name"
               required
+              maxLength={50}
             />
           </div>
 
@@ -119,6 +143,7 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this group about?"
               rows={2}
+              maxLength={200}
             />
           </div>
 
@@ -132,33 +157,42 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
           </div>
 
           <div>
-            <Label>Add Members</Label>
-            <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-              {friends.map((friend) => (
-                <div
-                  key={friend.profiles.id}
-                  className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:bg-muted"
-                  onClick={() => toggleMember(friend.profiles.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={friend.profiles.avatar_url || ""} />
-                      <AvatarFallback>
-                        {friend.profiles.display_name?.[0] || friend.profiles.username?.[0] || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">
-                      {friend.profiles.display_name || friend.profiles.username}
-                    </span>
+            <Label>Add Members (Optional)</Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              You can create a group with just yourself and add members later
+            </p>
+            {friends.length > 0 ? (
+              <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                {friends.map((friend) => (
+                  <div
+                    key={friend.profiles.id}
+                    className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:bg-muted"
+                    onClick={() => toggleMember(friend.profiles.id)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={friend.profiles.avatar_url || ""} />
+                        <AvatarFallback>
+                          {friend.profiles.display_name?.[0] || friend.profiles.username?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">
+                        {friend.profiles.display_name || friend.profiles.username}
+                      </span>
+                    </div>
+                    {selectedMembers.includes(friend.profiles.id) && (
+                      <Badge variant="default" className="text-xs">
+                        Selected
+                      </Badge>
+                    )}
                   </div>
-                  {selectedMembers.includes(friend.profiles.id) && (
-                    <Badge variant="default" className="text-xs">
-                      Selected
-                    </Badge>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-2">
+                No friends available to add. You can still create the group and invite members later.
+              </p>
+            )}
 
             {selectedMembers.length > 0 && (
               <div className="mt-3">
@@ -177,7 +211,10 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
                         {friend?.profiles.display_name || friend?.profiles.username}
                         <X 
                           className="w-3 h-3 cursor-pointer" 
-                          onClick={() => toggleMember(memberId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleMember(memberId);
+                          }}
                         />
                       </Badge>
                     );
@@ -193,6 +230,7 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
               variant="outline"
               onClick={() => setOpen(false)}
               className="flex-1"
+              disabled={createGroup.isPending}
             >
               Cancel
             </Button>

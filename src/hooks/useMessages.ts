@@ -216,17 +216,42 @@ export const useGroupConversations = () => {
     queryFn: async () => {
       if (!user) return [];
 
+      console.log("Fetching group conversations for user:", user.id);
+
+      // First get all groups the user is a member of
+      const { data: membershipData, error: membershipError } = await supabase
+        .from("group_conversation_members")
+        .select("group_id")
+        .eq("user_id", user.id);
+
+      if (membershipError) {
+        console.error("Error fetching group memberships:", membershipError);
+        throw membershipError;
+      }
+
+      console.log("User memberships:", membershipData);
+
+      if (!membershipData || membershipData.length === 0) {
+        console.log("No group memberships found");
+        return [];
+      }
+
+      const groupIds = membershipData.map(m => m.group_id);
+
+      // Then get the group details for those groups
       const { data: groups, error } = await supabase
         .from("group_conversations")
-        .select(`
-          *,
-          group_conversation_members!inner(user_id)
-        `)
-        .eq("group_conversation_members.user_id", user.id)
+        .select("*")
+        .in("id", groupIds)
         .order("last_message_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching groups:", error);
+        throw error;
+      }
       
+      console.log("Groups fetched:", groups);
+
       // Add unread_count to each group (defaulting to 0 for now)
       const groupsWithUnreadCount = groups?.map(group => ({
         ...group,
@@ -650,20 +675,33 @@ export const useCreateGroupConversation = () => {
       isPrivate?: boolean; 
       memberIds: string[];
     }) => {
+      console.log("Creating group conversation:", { name, description, isPrivate, memberIds, userId: user?.id });
+
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // First create the group conversation
       const { data: group, error: groupError } = await supabase
         .from("group_conversations")
         .insert({
           name,
           description,
           is_private: isPrivate || false,
-          created_by: user!.id,
+          created_by: user.id,
         })
         .select()
         .single();
 
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error("Error creating group:", groupError);
+        throw groupError;
+      }
 
-      // Add members to the group
+      console.log("Group created successfully:", group);
+
+      // The creator is automatically added as admin by the trigger
+      // Now add the selected members as regular members
       if (memberIds.length > 0) {
         const members = memberIds.map(memberId => ({
           group_id: group.id,
@@ -671,18 +709,29 @@ export const useCreateGroupConversation = () => {
           role: 'member' as const,
         }));
 
+        console.log("Adding members:", members);
+
         const { error: membersError } = await supabase
           .from("group_conversation_members")
           .insert(members);
 
-        if (membersError) throw membersError;
+        if (membersError) {
+          console.error("Error adding members:", membersError);
+          throw membersError;
+        }
+
+        console.log("Members added successfully");
       }
 
       return group;
     },
     onSuccess: () => {
+      console.log("Group creation successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ["group_conversations", user?.id] });
     },
+    onError: (error) => {
+      console.error("Group creation failed:", error);
+    }
   });
 };
 
