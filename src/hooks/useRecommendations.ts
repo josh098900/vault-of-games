@@ -34,7 +34,8 @@ export const useRecommendations = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
+      // Get recommendations with games
+      const { data: recommendationsData, error: recError } = await supabase
         .from("game_recommendations")
         .select(`
           *,
@@ -43,20 +44,35 @@ export const useRecommendations = () => {
             title,
             cover_image_url,
             genre
-          ),
-          profiles!inner(
-            id,
-            username,
-            display_name,
-            avatar_url
           )
         `)
         .eq("recipient_id", user.id)
-        .eq("profiles.id", supabase.from("game_recommendations").select("recommender_id"))
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as GameRecommendation[];
+      if (recError) throw recError;
+      if (!recommendationsData || recommendationsData.length === 0) return [];
+
+      // Get recommender IDs
+      const recommenderIds = recommendationsData.map(r => r.recommender_id);
+
+      // Get profiles for recommenders
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", recommenderIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      return recommendationsData.map(rec => ({
+        ...rec,
+        profiles: profilesData?.find(p => p.id === rec.recommender_id) || {
+          id: rec.recommender_id,
+          username: null,
+          display_name: null,
+          avatar_url: null,
+        }
+      })) as GameRecommendation[];
     },
     enabled: !!user,
   });
@@ -66,7 +82,8 @@ export const useRecommendations = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
+      // Get recommendations with games
+      const { data: recommendationsData, error: recError } = await supabase
         .from("game_recommendations")
         .select(`
           *,
@@ -75,20 +92,35 @@ export const useRecommendations = () => {
             title,
             cover_image_url,
             genre
-          ),
-          profiles!inner(
-            id,
-            username,
-            display_name,
-            avatar_url
           )
         `)
         .eq("recommender_id", user.id)
-        .eq("profiles.id", supabase.from("game_recommendations").select("recipient_id"))
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as GameRecommendation[];
+      if (recError) throw recError;
+      if (!recommendationsData || recommendationsData.length === 0) return [];
+
+      // Get recipient IDs
+      const recipientIds = recommendationsData.map(r => r.recipient_id);
+
+      // Get profiles for recipients
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", recipientIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      return recommendationsData.map(rec => ({
+        ...rec,
+        profiles: profilesData?.find(p => p.id === rec.recipient_id) || {
+          id: rec.recipient_id,
+          username: null,
+          display_name: null,
+          avatar_url: null,
+        }
+      })) as GameRecommendation[];
     },
     enabled: !!user,
   });
