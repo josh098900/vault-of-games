@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,7 @@ const Discover = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("all");
   const [sortBy, setSortBy] = useState("title");
-  const { games, isLoading } = useGames();
+  const { data: games = [], isLoading } = useGames();
   const { user } = useAuth();
 
   // Get unique genres from games and filter out null/undefined values
@@ -114,7 +113,7 @@ const Discover = () => {
 
           {/* Genre Filter */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {genres.slice(0, 10).map(genre => (
+            {genres.slice(0, 10).map((genre: string) => (
               <Badge 
                 key={genre}
                 variant={selectedGenre === genre ? "default" : "outline"}

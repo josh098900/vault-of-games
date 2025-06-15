@@ -59,7 +59,7 @@ export const CreateChallengeDialog = ({ children }: CreateChallengeDialogProps) 
   const [open, setOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
   const { createChallenge } = useChallenges();
-  const { games = [] } = useGames();
+  const { data: games = [] } = useGames();
 
   const form = useForm<ChallengeFormData>({
     resolver: zodResolver(challengeSchema),

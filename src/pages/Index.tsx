@@ -17,7 +17,7 @@ import { StatsSection } from "@/components/home/StatsSection";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { user, loading } = useAuth();
-  const { games, isLoading: gamesLoading } = useGames();
+  const { data: games = [], isLoading: gamesLoading } = useGames();
   const navigate = useNavigate();
 
   // Updated featured games with correct game images

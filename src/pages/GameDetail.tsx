@@ -14,7 +14,7 @@ const GameDetail = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const { games } = useGames();
+  const { data: games = [] } = useGames();
   const { reviews, isLoading: reviewsLoading, toggleLike, toggleHelpful } = useReviews(id);
 
   // Get game from location state or fetch from games list

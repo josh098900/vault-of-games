@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +22,7 @@ const Reviews = () => {
 
   const { user } = useAuth();
   const { reviews, isLoading, createReview, updateReview, deleteReview, toggleLike, toggleHelpful } = useReviews();
-  const { games } = useGames();
+  const { data: games = [] } = useGames();
 
   // Filter reviews based on search and filter
   const filteredReviews = reviews.filter(review => {

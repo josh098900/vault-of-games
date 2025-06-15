@@ -49,7 +49,7 @@ interface SendRecommendationDialogProps {
 export const SendRecommendationDialog = ({ children }: SendRecommendationDialogProps) => {
   const [open, setOpen] = useState(false);
   const { following } = useFriends();
-  const { games = [] } = useGames();
+  const { data: games = [] } = useGames();
   const { sendRecommendation } = useRecommendations();
 
   const form = useForm<RecommendationFormData>({
