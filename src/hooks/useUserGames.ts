@@ -114,6 +114,29 @@ export const useUserGames = () => {
     },
   });
 
+  const updateGameHours = useMutation({
+    mutationFn: async ({ userGameId, hoursPlayed }: { 
+      userGameId: string; 
+      hoursPlayed: number;
+    }) => {
+      const { data, error } = await supabase
+        .from("user_games")
+        .update({ hours_played: hoursPlayed })
+        .eq("id", userGameId)
+        .select(`
+          *,
+          games (*)
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userGames", user?.id] });
+    },
+  });
+
   const removeGameFromLibrary = useMutation({
     mutationFn: async (userGameId: string) => {
       const { error } = await supabase
@@ -133,6 +156,7 @@ export const useUserGames = () => {
     isLoading,
     addGameToLibrary,
     updateGameStatus,
+    updateGameHours,
     removeGameFromLibrary,
   };
 };

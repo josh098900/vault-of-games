@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Heart, Plus, Clock, Check, Trash2, Edit } from "lucide-react";
 import { UserGame, GameStatus, useUserGames } from "@/hooks/useUserGames";
+import { HoursPlayedDialog } from "./HoursPlayedDialog";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +18,9 @@ interface GameLibraryCardProps {
 }
 
 export const GameLibraryCard = ({ userGame }: GameLibraryCardProps) => {
-  const { updateGameStatus, removeGameFromLibrary } = useUserGames();
+  const { updateGameStatus, updateGameHours, removeGameFromLibrary } = useUserGames();
   const { games: game } = userGame;
+  const navigate = useNavigate();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -58,6 +61,17 @@ export const GameLibraryCard = ({ userGame }: GameLibraryCardProps) => {
 
   const handleRemove = () => {
     removeGameFromLibrary.mutate(userGame.id);
+  };
+
+  const handleViewDetails = () => {
+    navigate(`/game/${game.id}`, { state: { game } });
+  };
+
+  const handleUpdateHours = (hours: number) => {
+    updateGameHours.mutate({
+      userGameId: userGame.id,
+      hoursPlayed: hours,
+    });
   };
 
   return (
@@ -113,6 +127,12 @@ export const GameLibraryCard = ({ userGame }: GameLibraryCardProps) => {
             </DropdownMenuContent>
           </DropdownMenu>
           
+          <HoursPlayedDialog
+            currentHours={userGame.hours_played}
+            onUpdateHours={handleUpdateHours}
+            isUpdating={updateGameHours.isPending}
+          />
+          
           <Button 
             size="sm" 
             variant="secondary" 
@@ -142,13 +162,17 @@ export const GameLibraryCard = ({ userGame }: GameLibraryCardProps) => {
             </Badge>
           </div>
 
-          {userGame.hours_played && (
-            <div className="text-sm text-muted-foreground">
+          {userGame.hours_played !== null && userGame.hours_played > 0 && (
+            <div className="text-sm text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
               {userGame.hours_played} hours played
             </div>
           )}
 
-          <Button className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30">
+          <Button 
+            className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30"
+            onClick={handleViewDetails}
+          >
             View Details
           </Button>
         </div>
