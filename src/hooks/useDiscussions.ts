@@ -40,8 +40,7 @@ export const useDiscussions = (searchQuery?: string, category?: string) => {
             display_name,
             avatar_url
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (category && category !== 'All Categories') {
         query = query.eq('category', category);

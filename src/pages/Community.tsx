@@ -8,6 +8,7 @@ import { Header } from "@/components/Header";
 import { DiscussionCard } from "@/components/DiscussionCard";
 import { CreateDiscussionDialog } from "@/components/CreateDiscussionDialog";
 import { CommunityStats } from "@/components/CommunityStats";
+import { DiscussionSorting, SortOption } from "@/components/DiscussionSorting";
 import { useDiscussions, useCreateDiscussion, useLikeDiscussion } from "@/hooks/useDiscussions";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +44,8 @@ const Community = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [timeFilter, setTimeFilter] = useState("All Time");
 
   const { data: discussions = [], isLoading, error } = useDiscussions(
     searchQuery || undefined, 
@@ -92,8 +95,51 @@ const Community = () => {
     });
   };
 
+  // Sort discussions based on selected option
+  const sortDiscussions = (discussions: any[]) => {
+    const sorted = [...discussions];
+    
+    switch (sortBy) {
+      case "oldest":
+        return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      case "most_liked":
+        return sorted.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
+      case "most_replies":
+        return sorted.sort((a, b) => (b.replies_count || 0) - (a.replies_count || 0));
+      case "most_views":
+        return sorted.sort((a, b) => (b.views_count || 0) - (a.views_count || 0));
+      case "recently_active":
+        return sorted.sort((a, b) => new Date(b.last_activity_at || b.created_at).getTime() - new Date(a.last_activity_at || a.created_at).getTime());
+      case "newest":
+      default:
+        return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  };
+
+  // Filter discussions by time period
+  const filterByTime = (discussions: any[]) => {
+    if (timeFilter === "All Time") return discussions;
+    
+    const now = new Date();
+    const timeThresholds = {
+      "Today": new Date(now.setHours(0, 0, 0, 0)),
+      "This Week": new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+      "This Month": new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+    };
+    
+    const threshold = timeThresholds[timeFilter as keyof typeof timeThresholds];
+    if (!threshold) return discussions;
+    
+    return discussions.filter(discussion => 
+      new Date(discussion.created_at) >= threshold
+    );
+  };
+
+  // Apply sorting and filtering
+  const processedDiscussions = sortDiscussions(filterByTime(discussions));
+
   // Transform discussions to match the expected format
-  const transformedDiscussions = discussions.map(discussion => ({
+  const transformedDiscussions = processedDiscussions.map(discussion => ({
     id: discussion.id,
     title: discussion.title,
     content: discussion.content,
@@ -167,6 +213,14 @@ const Community = () => {
                 </Badge>
               ))}
             </div>
+
+            {/* Sorting and Time Filters */}
+            <DiscussionSorting
+              currentSort={sortBy}
+              onSortChange={setSortBy}
+              currentTimeFilter={timeFilter}
+              onTimeFilterChange={setTimeFilter}
+            />
 
             {/* Stats Bar */}
             <div className="flex items-center gap-6 text-sm text-muted-foreground bg-card/50 rounded-lg p-4">
