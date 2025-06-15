@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,7 +59,7 @@ export const CreateChallengeDialog = ({ children }: CreateChallengeDialogProps) 
   const [open, setOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
   const { createChallenge } = useChallenges();
-  const { data: games = [] } = useGames();
+  const { games = [] } = useGames();
 
   const form = useForm<ChallengeFormData>({
     resolver: zodResolver(challengeSchema),
