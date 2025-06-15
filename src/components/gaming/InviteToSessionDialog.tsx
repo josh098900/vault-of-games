@@ -38,39 +38,48 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
 
-  // Get user's followers
+  // Get user's followers with a manual join
   const { data: followers = [], isLoading } = useQuery({
     queryKey: ['user-followers', user?.id],
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // First get the follower IDs
+      const { data: followData, error: followError } = await supabase
         .from('user_follows')
-        .select(`
-          id,
-          follower_id,
-          follower:profiles!user_follows_follower_id_fkey(
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('id, follower_id')
         .eq('following_id', user.id);
 
-      if (error) {
-        console.error('Error fetching followers:', error);
-        throw error;
+      if (followError) {
+        console.error('Error fetching follow relationships:', followError);
+        throw followError;
       }
-      
-      // Transform the data to match our interface
-      return (data || [])
-        .filter(item => item.follower !== null)
-        .map(item => ({
-          id: item.id,
-          follower_id: item.follower_id,
-          profiles: item.follower
-        })) as Follower[];
+
+      if (!followData || followData.length === 0) return [];
+
+      // Then get the profile data for those followers
+      const followerIds = followData.map(f => f.follower_id);
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', followerIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+        throw profileError;
+      }
+
+      // Combine the data
+      const combinedData = followData.map(follow => {
+        const profile = profileData?.find(p => p.id === follow.follower_id);
+        return {
+          id: follow.id,
+          follower_id: follow.follower_id,
+          profiles: profile || null
+        };
+      }).filter(item => item.profiles !== null);
+
+      return combinedData as Follower[];
     },
     enabled: !!user && open,
   });

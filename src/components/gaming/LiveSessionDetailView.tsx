@@ -40,44 +40,75 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
     queryFn: async () => {
       console.log('Fetching session detail for:', sessionId);
       
-      const { data, error } = await supabase
+      // First get the session with game and host info
+      const { data: sessionData, error: sessionError } = await supabase
         .from('live_gaming_sessions')
         .select(`
           *,
-          game:games!live_gaming_sessions_game_id_fkey(title, cover_image_url, description, genre, platform),
-          host:profiles!live_gaming_sessions_user_id_fkey(username, display_name, avatar_url),
-          gaming_session_participants(
-            id,
-            user_id,
-            role,
-            joined_at,
-            left_at,
-            participant:profiles!gaming_session_participants_user_id_fkey(username, display_name, avatar_url)
-          )
+          games!inner(title, cover_image_url, description, genre, platform),
+          profiles!inner(username, display_name, avatar_url)
         `)
         .eq('id', sessionId)
         .eq('status', 'active')
         .single();
 
-      if (error) {
-        console.error('Error fetching session:', error);
-        throw error;
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        throw sessionError;
       }
+
+      // Then get participants with their profiles
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('gaming_session_participants')
+        .select(`
+          id,
+          user_id,
+          role,
+          joined_at,
+          left_at
+        `)
+        .eq('session_id', sessionId);
+
+      if (participantsError) {
+        console.error('Error fetching participants:', participantsError);
+        throw participantsError;
+      }
+
+      // Get profile data for participants
+      let participantsWithProfiles = [];
+      if (participantsData && participantsData.length > 0) {
+        const participantIds = participantsData.map(p => p.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', participantIds);
+
+        if (profilesError) {
+          console.error('Error fetching participant profiles:', profilesError);
+        }
+
+        participantsWithProfiles = participantsData.map(participant => {
+          const profile = profilesData?.find(p => p.id === participant.user_id);
+          return {
+            ...participant,
+            profiles: profile ? {
+              username: profile.username,
+              display_name: profile.display_name,
+              avatar_url: profile.avatar_url
+            } : null
+          };
+        });
+      }
+
+      console.log('Successfully fetched session:', sessionData);
       
-      console.log('Successfully fetched session:', data);
-      
-      // Transform the data to match our expected structure
-      const transformedData = {
-        ...data,
-        games: data.game,
-        profiles: data.host,
-        gaming_session_participants: data.gaming_session_participants?.map((p: any) => ({
-          ...p,
-          profiles: p.participant
-        })) || []
+      // Return data in the expected format
+      return {
+        ...sessionData,
+        games: sessionData.games,
+        profiles: sessionData.profiles,
+        gaming_session_participants: participantsWithProfiles
       };
-      
-      return transformedData;
     },
   });
 
