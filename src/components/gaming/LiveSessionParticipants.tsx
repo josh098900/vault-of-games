@@ -2,19 +2,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Users, Eye, Play } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Users, Crown, Eye } from "lucide-react";
 
 interface Participant {
   id: string;
   user_id: string;
   role: string;
   joined_at: string;
+  left_at: string | null;
   profiles: {
     username: string;
     display_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 interface LiveSessionParticipantsProps {
@@ -25,61 +25,79 @@ interface LiveSessionParticipantsProps {
 export const LiveSessionParticipants = ({ participants, sessionType }: LiveSessionParticipantsProps) => {
   const getRoleIcon = (role: string) => {
     switch (role) {
+      case 'host':
+        return <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500" />;
       case 'spectator':
-        return <Eye className="w-3 h-3" />;
+        return <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />;
       default:
-        return <Play className="w-3 h-3" />;
+        return <Users className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />;
     }
   };
 
-  const getRoleColor = (role: string) => {
+  const getRoleBadgeColor = (role: string) => {
     switch (role) {
+      case 'host':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20';
       case 'spectator':
-        return 'bg-purple-500/20 text-purple-400';
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/20';
       default:
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-green-500/20 text-green-400 border-green-500/20';
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Participants ({participants.length})
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+          {sessionType === 'streaming' ? 'Viewers' : 'Participants'}
+          <span className="text-xs sm:text-sm font-normal text-muted-foreground">
+            ({participants.length})
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent>
         {participants.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No participants yet
-          </p>
+          <div className="text-center text-muted-foreground py-4 sm:py-6">
+            <Users className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 opacity-50" />
+            <p className="text-xs sm:text-sm">
+              No {sessionType === 'streaming' ? 'viewers' : 'participants'} yet
+            </p>
+          </div>
         ) : (
-          participants.map((participant) => (
-            <div key={participant.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={participant.profiles?.avatar_url || ""} />
-                  <AvatarFallback>
-                    {participant.profiles?.display_name?.[0] || 
-                     participant.profiles?.username?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">
-                    {participant.profiles?.display_name || participant.profiles?.username}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Joined {formatDistanceToNow(new Date(participant.joined_at), { addSuffix: true })}
-                  </p>
+          <div className="space-y-2 sm:space-y-3">
+            {participants.map((participant) => (
+              <div
+                key={participant.id}
+                className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30"
+              >
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <Avatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
+                    <AvatarImage src={participant.profiles?.avatar_url || ""} />
+                    <AvatarFallback className="text-xs">
+                      {participant.profiles?.display_name?.[0] || 
+                       participant.profiles?.username?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-xs sm:text-sm truncate">
+                      {participant.profiles?.display_name || 
+                       participant.profiles?.username || "Unknown User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      @{participant.profiles?.username || "anonymous"}
+                    </p>
+                  </div>
                 </div>
+                <Badge 
+                  className={`${getRoleBadgeColor(participant.role)} text-xs flex items-center gap-1 flex-shrink-0`}
+                >
+                  {getRoleIcon(participant.role)}
+                  <span className="capitalize">{participant.role}</span>
+                </Badge>
               </div>
-              <Badge className={`${getRoleColor(participant.role)} text-xs`}>
-                {getRoleIcon(participant.role)}
-                <span className="ml-1 capitalize">{participant.role}</span>
-              </Badge>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>

@@ -29,11 +29,11 @@ export const LiveSessionInfo = ({ session }: LiveSessionInfoProps) => {
   const getSessionTypeIcon = (type: string) => {
     switch (type) {
       case 'streaming':
-        return <Eye className="w-5 h-5" />;
+        return <Eye className="w-4 h-4 sm:w-5 sm:h-5" />;
       case 'looking_for_party':
-        return <Users className="w-5 h-5" />;
+        return <Users className="w-4 h-4 sm:w-5 sm:h-5" />;
       default:
-        return <Play className="w-5 h-5" />;
+        return <Play className="w-4 h-4 sm:w-5 sm:h-5" />;
     }
   };
 
@@ -51,14 +51,14 @@ export const LiveSessionInfo = ({ session }: LiveSessionInfoProps) => {
   return (
     <>
       {/* Header with Session Type Badge */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Live Gaming Session</h1>
-          <p className="text-muted-foreground">Join the action or watch the stream</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Live Gaming Session</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Join the action or watch the stream</p>
         </div>
-        <Badge className={`${getSessionTypeColor(session.session_type)} px-4 py-2`}>
+        <Badge className={`${getSessionTypeColor(session.session_type)} px-3 py-2 self-start sm:self-auto`}>
           {getSessionTypeIcon(session.session_type)}
-          <span className="ml-2 capitalize">
+          <span className="ml-2 capitalize text-xs sm:text-sm">
             {session.session_type.replace('_', ' ')}
           </span>
         </Badge>
@@ -67,17 +67,17 @@ export const LiveSessionInfo = ({ session }: LiveSessionInfoProps) => {
       {/* Game Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-3">
             <img
               src={getGameImage(session.games)}
               alt={session.games?.title}
-              className="w-16 h-16 rounded object-cover"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded object-cover self-start"
             />
-            <div>
-              <h3 className="text-xl font-semibold">{session.games?.title}</h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex-1">
+              <h3 className="text-lg sm:text-xl font-semibold">{session.games?.title}</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground mt-1">
                 <span>{session.games?.genre}</span>
-                <span>•</span>
+                <span className="hidden sm:inline">•</span>
                 <span>{session.games?.platform}</span>
               </div>
             </div>
@@ -85,11 +85,11 @@ export const LiveSessionInfo = ({ session }: LiveSessionInfoProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           {session.games?.description && (
-            <p className="text-muted-foreground">{session.games.description}</p>
+            <p className="text-muted-foreground text-sm sm:text-base">{session.games.description}</p>
           )}
           {session.description && (
             <div>
-              <h4 className="font-medium mb-2">Session Description</h4>
+              <h4 className="font-medium mb-2 text-sm sm:text-base">Session Description</h4>
               <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
                 {session.description}
               </p>
@@ -101,25 +101,25 @@ export const LiveSessionInfo = ({ session }: LiveSessionInfoProps) => {
       {/* Host Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Crown className="w-5 h-5 text-yellow-500" />
+          <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
+            <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
             Session Host
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12">
+            <Avatar className="w-10 h-10 sm:w-12 sm:h-12">
               <AvatarImage src={session.profiles?.avatar_url || ""} />
-              <AvatarFallback>
+              <AvatarFallback className="text-sm">
                 {session.profiles?.display_name?.[0] || 
                  session.profiles?.username?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">
+              <p className="font-medium text-sm sm:text-base">
                 {session.profiles?.display_name || session.profiles?.username}
               </p>
-              <p className="text-sm text-muted-foreground">Host</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Host</p>
             </div>
           </div>
         </CardContent>

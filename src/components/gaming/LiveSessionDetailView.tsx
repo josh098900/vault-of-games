@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { LiveSessionStats } from "./LiveSessionStats";
 import { LiveSessionActions } from "./LiveSessionActions";
 import { LiveSessionParticipants } from "./LiveSessionParticipants";
 import { LiveSessionChat } from "./LiveSessionChat";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LiveSessionDetailViewProps {
   sessionId: string;
@@ -28,6 +28,7 @@ interface Participant {
 
 export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const { data: session, isLoading, error } = useQuery({
     queryKey: ['live-session-detail', sessionId],
@@ -133,15 +134,43 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
   const activeParticipants = (session.gaming_session_participants || []).filter((p: any) => !p.left_at);
   const isParticipant = activeParticipants.some((p: any) => p.user_id === user?.id);
 
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {/* Mobile Layout - Stacked vertically */}
+        <LiveSessionInfo session={session} />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <LiveSessionStats session={session} />
+          
+          <Card>
+            <CardContent className="p-4">
+              <LiveSessionActions 
+                session={session} 
+                isParticipant={isParticipant} 
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        <LiveSessionParticipants 
+          participants={activeParticipants as Participant[]}
+          sessionType={session.session_type}
+        />
+
+        <LiveSessionChat sessionId={sessionId} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-4">
-        {/* Main Session Info */}
+        {/* Desktop Layout */}
         <div className="lg:col-span-2 space-y-6">
           <LiveSessionInfo session={session} />
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <LiveSessionStats session={session} />
           
@@ -160,7 +189,6 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
           />
         </div>
 
-        {/* Chat Section */}
         <div className="lg:col-span-1">
           <LiveSessionChat sessionId={sessionId} />
         </div>

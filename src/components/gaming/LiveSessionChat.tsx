@@ -9,6 +9,7 @@ import { Send, MessageSquare } from 'lucide-react';
 import { useLiveSessionMessages, useSendSessionMessage } from '@/hooks/useLiveSessionChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LiveSessionChatProps {
   sessionId: string;
@@ -18,6 +19,7 @@ export const LiveSessionChat = ({ sessionId }: LiveSessionChatProps) => {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   const { data: messages = [], isLoading } = useLiveSessionMessages(sessionId);
   const sendMessage = useSendSessionMessage();
@@ -58,8 +60,8 @@ export const LiveSessionChat = ({ sessionId }: LiveSessionChatProps) => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
             Session Chat
           </CardTitle>
         </CardHeader>
@@ -74,29 +76,32 @@ export const LiveSessionChat = ({ sessionId }: LiveSessionChatProps) => {
     );
   }
 
+  const chatHeight = isMobile ? 'h-[350px]' : 'h-[500px]';
+
   return (
-    <Card className="h-[500px] flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
+    <Card className={`${chatHeight} flex flex-col`}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
           Session Chat
-          <span className="text-sm font-normal text-muted-foreground">
-            ({messages.length} messages)
+          <span className="text-xs sm:text-sm font-normal text-muted-foreground">
+            ({messages.length})
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">
-        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
-          <div className="space-y-4 pb-4">
+        <ScrollArea className="flex-1 px-3 sm:px-4" ref={scrollAreaRef}>
+          <div className="space-y-3 sm:space-y-4 pb-4">
             {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No messages yet. Start the conversation!</p>
+              <div className="text-center text-muted-foreground py-6 sm:py-8">
+                <MessageSquare className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-sm sm:text-base">No messages yet</p>
+                <p className="text-xs sm:text-sm mt-1">Start the conversation!</p>
               </div>
             ) : (
               messages.map((msg) => (
-                <div key={msg.id} className="flex items-start gap-3">
-                  <Avatar className="w-8 h-8 flex-shrink-0">
+                <div key={msg.id} className="flex items-start gap-2 sm:gap-3">
+                  <Avatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
                     <AvatarImage src={msg.profiles?.avatar_url || ""} />
                     <AvatarFallback className="text-xs">
                       {msg.profiles?.display_name?.[0] || 
@@ -105,17 +110,17 @@ export const LiveSessionChat = ({ sessionId }: LiveSessionChatProps) => {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">
+                      <span className="font-medium text-xs sm:text-sm truncate">
                         {msg.profiles?.display_name || msg.profiles?.username}
                       </span>
                       {msg.user_id === user?.id && (
-                        <span className="text-xs text-blue-500">You</span>
+                        <span className="text-xs text-blue-500 flex-shrink-0">You</span>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
                         {format(new Date(msg.created_at), 'HH:mm')}
                       </span>
                     </div>
-                    <p className="text-sm break-words">{msg.content}</p>
+                    <p className="text-xs sm:text-sm break-words">{msg.content}</p>
                   </div>
                 </div>
               ))
@@ -123,7 +128,7 @@ export const LiveSessionChat = ({ sessionId }: LiveSessionChatProps) => {
           </div>
         </ScrollArea>
         
-        <div className="border-t p-4">
+        <div className="border-t p-3 sm:p-4">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <Input
               value={message}
@@ -131,15 +136,16 @@ export const LiveSessionChat = ({ sessionId }: LiveSessionChatProps) => {
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               disabled={sendMessage.isPending}
-              className="flex-1"
+              className="flex-1 text-sm"
               maxLength={500}
             />
             <Button 
               type="submit" 
               size="sm"
               disabled={!message.trim() || sendMessage.isPending}
+              className="flex-shrink-0"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </form>
         </div>
