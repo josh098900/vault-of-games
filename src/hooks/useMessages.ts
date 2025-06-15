@@ -41,50 +41,56 @@ export const useConversations = () => {
     queryFn: async () => {
       if (!user) return [];
 
+      // Get conversations where user is participant
       const { data: conversations, error } = await supabase
         .from("message_conversations")
-        .select(`
-          *,
-          direct_messages!inner (
-            content,
-            created_at,
-            is_read,
-            sender_id
-          )
-        `)
+        .select("*")
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order("last_message_at", { ascending: false });
 
       if (error) throw error;
+      if (!conversations || conversations.length === 0) return [];
 
-      const conversationsWithProfiles = await Promise.all(
+      // Get profiles and messages for each conversation
+      const conversationsWithData = await Promise.all(
         conversations.map(async (conv) => {
           const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id;
           
+          // Get other user's profile
           const { data: profile } = await supabase
             .from("profiles")
             .select("username, display_name, avatar_url")
             .eq("id", otherUserId)
             .single();
 
-          const messages = conv.direct_messages as any[];
-          const lastMessage = messages.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )[0];
+          // Get messages for this conversation
+          const { data: messages } = await supabase
+            .from("direct_messages")
+            .select("content, created_at, is_read, sender_id")
+            .or(`and(sender_id.eq.${conv.user1_id},recipient_id.eq.${conv.user2_id}),and(sender_id.eq.${conv.user2_id},recipient_id.eq.${conv.user1_id})`)
+            .order("created_at", { ascending: false })
+            .limit(1);
 
-          const unreadCount = messages.filter(msg => 
-            !msg.is_read && msg.sender_id !== user.id
-          ).length;
+          const lastMessage = messages && messages.length > 0 ? messages[0] : null;
+
+          // Count unread messages
+          const { count: unreadCount } = await supabase
+            .from("direct_messages")
+            .select("*", { count: "exact", head: true })
+            .eq("recipient_id", user.id)
+            .eq("sender_id", otherUserId)
+            .eq("is_read", false);
 
           return {
             ...conv,
             other_user_profile: profile,
             last_message: lastMessage?.content,
-            unread_count: unreadCount
+            unread_count: unreadCount || 0
           };
         })
       );
 
-      return conversationsWithProfiles as Conversation[];
+      return conversationsWithData as Conversation[];
     },
     enabled: !!user,
   });
@@ -98,22 +104,33 @@ export const useMessages = (recipientId: string) => {
     queryFn: async () => {
       if (!user) return [];
 
+      // Get messages between current user and recipient
       const { data: messages, error } = await supabase
         .from("direct_messages")
-        .select(`
-          *,
-          sender_profile:profiles!sender_id (
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .or(`and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id})`)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
+      if (!messages) return [];
 
-      return messages as DirectMessage[];
+      // Get sender profiles for all messages
+      const messagesWithProfiles = await Promise.all(
+        messages.map(async (message) => {
+          const { data: senderProfile } = await supabase
+            .from("profiles")
+            .select("username, display_name, avatar_url")
+            .eq("id", message.sender_id)
+            .single();
+
+          return {
+            ...message,
+            sender_profile: senderProfile
+          };
+        })
+      );
+
+      return messagesWithProfiles as DirectMessage[];
     },
     enabled: !!user && !!recipientId,
   });
