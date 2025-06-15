@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,26 +16,52 @@ export const useLiveGamingSessions = () => {
     queryKey: ['live-gaming-sessions'],
     queryFn: async () => {
       console.log('Fetching live gaming sessions...');
+      
+      // First, let's try a simpler query to see if basic data is there
+      const { data: basicSessions, error: basicError } = await supabase
+        .from('live_gaming_sessions')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (basicError) {
+        console.error('Error fetching basic sessions:', basicError);
+        throw basicError;
+      }
+
+      console.log('Basic sessions found:', basicSessions?.length || 0);
+
+      // Now fetch with joins
       const { data, error } = await supabase
         .from('live_gaming_sessions')
         .select(`
           *,
           games(title, cover_image_url),
           profiles(username, display_name, avatar_url),
-          gaming_session_participants(*)
+          gaming_session_participants(
+            id,
+            user_id,
+            role,
+            joined_at,
+            left_at
+          )
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching live gaming sessions:', error);
-        throw error;
+        console.error('Error fetching live gaming sessions with joins:', error);
+        // Fallback to basic query if joins fail
+        return basicSessions || [];
       }
 
-      console.log('Fetched sessions:', data?.length || 0);
+      console.log('Fetched sessions with joins:', data?.length || 0);
+      console.log('Session data:', data);
+      
       return data || [];
     },
     enabled: !!user,
+    refetchInterval: 10000, // Refetch every 10 seconds as backup
   });
 
   // Set up real-time subscription
@@ -44,8 +69,9 @@ export const useLiveGamingSessions = () => {
     if (!user) return;
 
     console.log('Setting up real-time subscription for live gaming sessions');
+    
     const channel = supabase
-      .channel('live-gaming-sessions-realtime')
+      .channel('live-gaming-sessions-changes')
       .on(
         'postgres_changes',
         {
@@ -54,8 +80,10 @@ export const useLiveGamingSessions = () => {
           table: 'live_gaming_sessions'
         },
         (payload) => {
-          console.log('Live gaming session change:', payload);
+          console.log('Live gaming session change detected:', payload);
+          // Force immediate refetch
           queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
+          queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
       .on(
@@ -66,11 +94,15 @@ export const useLiveGamingSessions = () => {
           table: 'gaming_session_participants'
         },
         (payload) => {
-          console.log('Gaming session participant change:', payload);
+          console.log('Gaming session participant change detected:', payload);
+          // Force immediate refetch
           queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
+          queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
 
     return () => {
       console.log('Cleaning up real-time subscription');
@@ -117,9 +149,15 @@ export const useCreateGamingSession = () => {
           description,
           max_participants: maxParticipants,
           is_public: isPublic,
-          user_id: user.user.id
+          user_id: user.user.id,
+          status: 'active', // Explicitly set status
+          current_participants: 1 // Start with 1 participant (the creator)
         })
-        .select()
+        .select(`
+          *,
+          games(title, cover_image_url),
+          profiles(username, display_name, avatar_url)
+        `)
         .single();
 
       if (error) {
@@ -131,8 +169,10 @@ export const useCreateGamingSession = () => {
       return data;
     },
     onSuccess: (data) => {
-      console.log('Gaming session created successfully, invalidating queries');
-      // Invalidate and refetch the live gaming sessions
+      console.log('Gaming session created successfully');
+      console.log('New session data:', data);
+      
+      // Force immediate refetch and invalidation
       queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
       queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
       

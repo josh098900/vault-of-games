@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,7 +21,14 @@ const Social = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const { data: liveSessions = [], isLoading: sessionsLoading } = useLiveGamingSessions();
+  const { data: liveSessions = [], isLoading: sessionsLoading, error: sessionsError } = useLiveGamingSessions();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Live sessions data:', liveSessions);
+    console.log('Sessions loading:', sessionsLoading);
+    console.log('Sessions error:', sessionsError);
+  }, [liveSessions, sessionsLoading, sessionsError]);
 
   // Handle navigation from message dropdown
   useEffect(() => {
@@ -62,6 +68,14 @@ const Social = () => {
         <StartGamingSessionDialog />
       </div>
 
+      {sessionsError && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <p className="text-red-600">Error loading sessions: {sessionsError.message}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {sessionsLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -84,10 +98,15 @@ const Social = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {liveSessions.map((session) => (
-            <LiveGamingSessionCard key={session.id} session={session} />
-          ))}
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Found {liveSessions.length} active session{liveSessions.length !== 1 ? 's' : ''}
+          </p>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {liveSessions.map((session) => (
+              <LiveGamingSessionCard key={session.id} session={session} />
+            ))}
+          </div>
         </div>
       )}
     </div>
