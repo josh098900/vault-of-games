@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,27 +21,45 @@ export const StartGamingSessionDialog = () => {
   const { data: games = [], isLoading } = useGames();
   const createSession = useCreateGamingSession();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setSelectedGameId("");
+    setSessionType("playing");
+    setDescription("");
+    setMaxParticipants(undefined);
+    setIsPublic(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGameId) return;
 
-    createSession.mutate({
-      gameId: selectedGameId,
-      sessionType,
-      description: description || undefined,
-      maxParticipants,
-      isPublic
-    }, {
-      onSuccess: () => {
-        setOpen(false);
-        // Reset form
-        setSelectedGameId("");
-        setSessionType("playing");
-        setDescription("");
-        setMaxParticipants(undefined);
-        setIsPublic(true);
-      }
-    });
+    console.log('Submitting gaming session...');
+    
+    try {
+      await createSession.mutateAsync({
+        gameId: selectedGameId,
+        sessionType,
+        description: description || undefined,
+        maxParticipants,
+        isPublic
+      });
+      
+      // Close dialog and reset form on success
+      setOpen(false);
+      resetForm();
+      console.log('Gaming session created and dialog closed');
+    } catch (error) {
+      console.error('Failed to create gaming session:', error);
+      // Dialog stays open on error so user can try again
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      // Reset form when dialog closes
+      resetForm();
+    }
   };
 
   const getSessionTypeIcon = (type: string) => {
@@ -57,7 +74,7 @@ export const StartGamingSessionDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
           <Play className="w-4 h-4 mr-2" />

@@ -16,6 +16,7 @@ export const useLiveGamingSessions = () => {
   const query = useQuery({
     queryKey: ['live-gaming-sessions'],
     queryFn: async () => {
+      console.log('Fetching live gaming sessions...');
       const { data, error } = await supabase
         .from('live_gaming_sessions')
         .select(`
@@ -32,6 +33,7 @@ export const useLiveGamingSessions = () => {
         throw error;
       }
 
+      console.log('Fetched sessions:', data?.length || 0);
       return data || [];
     },
     enabled: !!user,
@@ -41,8 +43,9 @@ export const useLiveGamingSessions = () => {
   useEffect(() => {
     if (!user) return;
 
+    console.log('Setting up real-time subscription for live gaming sessions');
     const channel = supabase
-      .channel('live-gaming-sessions')
+      .channel('live-gaming-sessions-realtime')
       .on(
         'postgres_changes',
         {
@@ -50,8 +53,9 @@ export const useLiveGamingSessions = () => {
           schema: 'public',
           table: 'live_gaming_sessions'
         },
-        () => {
-          query.refetch();
+        (payload) => {
+          console.log('Live gaming session change:', payload);
+          queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
       .on(
@@ -61,16 +65,18 @@ export const useLiveGamingSessions = () => {
           schema: 'public',
           table: 'gaming_session_participants'
         },
-        () => {
-          query.refetch();
+        (payload) => {
+          console.log('Gaming session participant change:', payload);
+          queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [user, query]);
+  }, [user, queryClient]);
 
   return query;
 };
@@ -92,6 +98,17 @@ export const useCreateGamingSession = () => {
       maxParticipants?: number;
       isPublic?: boolean;
     }) => {
+      console.log('Creating gaming session with data:', {
+        gameId,
+        sessionType,
+        description,
+        maxParticipants,
+        isPublic
+      });
+
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('live_gaming_sessions')
         .insert({
@@ -100,16 +117,25 @@ export const useCreateGamingSession = () => {
           description,
           max_participants: maxParticipants,
           is_public: isPublic,
-          user_id: (await supabase.auth.getUser()).data.user!.id
+          user_id: user.user.id
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating gaming session:', error);
+        throw error;
+      }
+
+      console.log('Created gaming session:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Gaming session created successfully, invalidating queries');
+      // Invalidate and refetch the live gaming sessions
       queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
+      queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
+      
       toast({
         title: "Gaming session started!",
         description: "Your live gaming session is now active.",
@@ -134,11 +160,14 @@ export const useJoinGamingSession = () => {
       sessionId: string;
       role?: 'participant' | 'spectator';
     }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('gaming_session_participants')
         .insert({
           session_id: sessionId,
-          user_id: (await supabase.auth.getUser()).data.user!.id,
+          user_id: user.user.id,
           role
         })
         .select()
