@@ -23,58 +23,55 @@ export const useLiveSessionMessages = (sessionId: string) => {
 
   const query = useQuery({
     queryKey: ['live-session-messages', sessionId],
-    queryFn: async () => {
+    queryFn: async (): Promise<LiveSessionMessage[]> => {
       if (!sessionId) return [];
 
-      try {
-        // First, get the messages without the join
-        const { data: messages, error: messagesError } = await supabase
-          .from('live_session_messages')
-          .select('*')
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: true });
+      console.log('Fetching messages for session:', sessionId);
 
-        if (messagesError) {
-          console.error('Error fetching messages:', messagesError);
-          throw messagesError;
-        }
+      // Get messages
+      const { data: messages, error: messagesError } = await supabase
+        .from('live_session_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
 
-        if (!messages || messages.length === 0) {
-          return [];
-        }
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        throw messagesError;
+      }
 
-        // Get unique user IDs from messages
-        const userIds = [...new Set(messages.map((msg: any) => msg.user_id))];
-
-        // Fetch profiles for all users
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', userIds);
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          // Continue without profiles if fetch fails
-        }
-
-        // Combine messages with profiles
-        const messagesWithProfiles = messages.map((message: any) => {
-          const profile = profiles?.find((p) => p.id === message.user_id);
-          return {
-            ...message,
-            profiles: profile ? {
-              username: profile.username,
-              display_name: profile.display_name,
-              avatar_url: profile.avatar_url
-            } : undefined
-          };
-        });
-
-        return messagesWithProfiles as LiveSessionMessage[];
-      } catch (error) {
-        console.error('Failed to fetch session messages:', error);
+      if (!messages || messages.length === 0) {
         return [];
       }
+
+      // Get unique user IDs from messages
+      const userIds = [...new Set(messages.map(msg => msg.user_id))];
+
+      // Fetch profiles for all users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Continue without profiles if fetch fails
+      }
+
+      // Combine messages with profiles
+      return messages.map(message => ({
+        id: message.id,
+        session_id: message.session_id,
+        user_id: message.user_id,
+        content: message.content,
+        created_at: message.created_at,
+        updated_at: message.updated_at,
+        profiles: profiles?.find(p => p.id === message.user_id) ? {
+          username: profiles.find(p => p.id === message.user_id)!.username,
+          display_name: profiles.find(p => p.id === message.user_id)!.display_name,
+          avatar_url: profiles.find(p => p.id === message.user_id)!.avatar_url
+        } : undefined
+      }));
     },
     enabled: !!sessionId,
   });
@@ -116,53 +113,45 @@ export const useSendSessionMessage = () => {
     mutationFn: async ({ sessionId, content }: { sessionId: string; content: string }) => {
       if (!user) throw new Error('User not authenticated');
 
-      try {
-        const { data, error } = await supabase
-          .from('live_session_messages')
-          .insert({
-            session_id: sessionId,
-            user_id: user.id,
-            content: content.trim()
-          })
-          .select('*')
-          .single();
+      const { data, error } = await supabase
+        .from('live_session_messages')
+        .insert({
+          session_id: sessionId,
+          user_id: user.id,
+          content: content.trim()
+        })
+        .select('*')
+        .single();
 
-        if (error) {
-          console.error('Error sending message:', error);
-          throw error;
-        }
-
-        if (!data) {
-          throw new Error('No data returned from message insert');
-        }
-
-        // Get user profile separately
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, display_name, avatar_url')
-          .eq('id', user.id)
-          .single();
-
-        // Create the return object with proper typing
-        const messageWithProfile: LiveSessionMessage = {
-          id: data.id,
-          session_id: data.session_id,
-          user_id: data.user_id,
-          content: data.content,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-          profiles: profile ? {
-            username: profile.username,
-            display_name: profile.display_name,
-            avatar_url: profile.avatar_url
-          } : undefined
-        };
-
-        return messageWithProfile;
-      } catch (error) {
-        console.error('Failed to send message:', error);
+      if (error) {
+        console.error('Error sending message:', error);
         throw error;
       }
+
+      if (!data) {
+        throw new Error('No data returned from message insert');
+      }
+
+      // Get user profile separately
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, display_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      return {
+        id: data.id,
+        session_id: data.session_id,
+        user_id: data.user_id,
+        content: data.content,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        profiles: profile ? {
+          username: profile.username,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url
+        } : undefined
+      } as LiveSessionMessage;
     },
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: ['live-session-messages', sessionId] });
