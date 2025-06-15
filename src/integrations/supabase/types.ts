@@ -1190,6 +1190,14 @@ export type Database = {
         Args: { discussion_uuid: string }
         Returns: undefined
       }
+      is_group_creator: {
+        Args: { group_id: string; user_id: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { group_id: string; user_id: string }
+        Returns: boolean
+      }
       reject_game_submission: {
         Args: {
           submission_id: string

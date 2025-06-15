@@ -36,18 +36,8 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log("=== FORM SUBMISSION DEBUG ===");
-    console.log("Form data:", {
-      name: name.trim(),
-      description: description.trim(),
-      isPrivate,
-      selectedMembers,
-      nameLength: name.trim().length
-    });
 
     if (!name.trim()) {
-      console.error("❌ Group name is empty");
       toast({
         title: "Error",
         description: "Group name is required",
@@ -57,7 +47,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
     }
 
     if (name.trim().length < 2) {
-      console.error("❌ Group name too short");
       toast({
         title: "Error", 
         description: "Group name must be at least 2 characters",
@@ -66,8 +55,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
       return;
     }
 
-    console.log("✅ Form validation passed, submitting...");
-
     try {
       const group = await createGroup.mutateAsync({
         name: name.trim(),
@@ -75,8 +62,6 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
         isPrivate,
         memberIds: selectedMembers,
       });
-
-      console.log("🎉 Group created successfully:", group);
 
       toast({
         title: "Success",
@@ -92,9 +77,7 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
       setIsPrivate(false);
       setSelectedMembers([]);
     } catch (error) {
-      console.error("💥 Group creation failed:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create group";
-      console.error("Error message for toast:", errorMessage);
       
       toast({
         title: "Error",
