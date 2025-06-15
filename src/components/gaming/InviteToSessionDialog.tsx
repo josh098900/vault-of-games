@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,51 +103,72 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
 
   const inviteUsers = useMutation({
     mutationFn: async (userIds: string[]) => {
-      console.log('Sending invites to users:', userIds);
-      
-      // Get session details first
-      const { data: session, error: sessionError } = await supabase
-        .from('live_gaming_sessions')
-        .select(`
-          *,
-          games!inner(title)
-        `)
-        .eq('id', sessionId)
-        .single();
+      try {
+        console.log('Sending invites to users:', userIds);
+        console.log('Session ID:', sessionId);
+        
+        // Get session details first - simplified query
+        const { data: session, error: sessionError } = await supabase
+          .from('live_gaming_sessions')
+          .select('*')
+          .eq('id', sessionId)
+          .single();
 
-      if (sessionError) {
-        console.error('Error fetching session:', sessionError);
-        throw sessionError;
-      }
-
-      console.log('Session data:', session);
-
-      // Create notifications for each invited user
-      const notifications = userIds.map(userId => ({
-        user_id: userId,
-        type: 'session_invite',
-        title: 'Gaming Session Invite',
-        message: `You've been invited to join a ${session.session_type.replace('_', ' ')} session for ${session.games?.title}`,
-        data: {
-          session_id: sessionId,
-          session_type: session.session_type,
-          game_title: session.games?.title,
-          inviter_id: user?.id
+        if (sessionError) {
+          console.error('Error fetching session:', sessionError);
+          throw new Error(`Failed to fetch session: ${sessionError.message}`);
         }
-      }));
 
-      console.log('Creating notifications:', notifications);
+        if (!session) {
+          throw new Error('Session not found');
+        }
 
-      const { error } = await supabase
-        .from('notifications')
-        .insert(notifications);
+        console.log('Session data:', session);
 
-      if (error) {
-        console.error('Error creating notifications:', error);
+        // Get game details separately
+        const { data: gameData, error: gameError } = await supabase
+          .from('games')
+          .select('title')
+          .eq('id', session.game_id)
+          .single();
+
+        if (gameError) {
+          console.error('Error fetching game:', gameError);
+          throw new Error(`Failed to fetch game: ${gameError.message}`);
+        }
+
+        console.log('Game data:', gameData);
+
+        // Create notifications for each invited user
+        const notifications = userIds.map(userId => ({
+          user_id: userId,
+          type: 'session_invite',
+          title: 'Gaming Session Invite',
+          message: `You've been invited to join a ${session.session_type.replace('_', ' ')} session for ${gameData?.title || 'a game'}`,
+          data: {
+            session_id: sessionId,
+            session_type: session.session_type,
+            game_title: gameData?.title || 'Unknown Game',
+            inviter_id: user?.id
+          }
+        }));
+
+        console.log('Creating notifications:', notifications);
+
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert(notifications);
+
+        if (notificationError) {
+          console.error('Error creating notifications:', notificationError);
+          throw new Error(`Failed to create notifications: ${notificationError.message}`);
+        }
+
+        console.log('Invites sent successfully');
+      } catch (error) {
+        console.error('Full error in inviteUsers:', error);
         throw error;
       }
-
-      console.log('Invites sent successfully');
     },
     onSuccess: () => {
       toast({
@@ -163,7 +183,7 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
       console.error('Error sending invites:', error);
       toast({
         title: "Error",
-        description: "Failed to send invites. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to send invites. Please try again.",
         variant: "destructive",
       });
     },
