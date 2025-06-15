@@ -1,11 +1,11 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, UserMinus, Search } from "lucide-react";
+import { Users, UserPlus, UserMinus, Search, MessageCircle } from "lucide-react";
 import { useFriends } from "@/hooks/useFriends";
 import { UserSearchDialog } from "./UserSearchDialog";
+import { StartConversationDialog } from "./StartConversationDialog";
 import { toast } from "@/hooks/use-toast";
 
 export const FriendsTab = () => {
@@ -41,6 +41,14 @@ export const FriendsTab = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleConversationStarted = (userId: string) => {
+    // Could navigate to messages tab or show success message
+    toast({
+      title: "Success",
+      description: "Message sent! Check the Messages tab to continue the conversation.",
+    });
   };
 
   if (isLoadingFollowing || isLoadingFollowers) {
@@ -127,15 +135,23 @@ export const FriendsTab = () => {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleUnfollow(follow.following_id)}
-                      disabled={unfollowUser.isPending}
-                    >
-                      <UserMinus className="w-4 h-4 mr-2" />
-                      Unfollow
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <StartConversationDialog onConversationStarted={handleConversationStarted}>
+                        <Button variant="outline" size="sm">
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Message
+                        </Button>
+                      </StartConversationDialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnfollow(follow.following_id)}
+                        disabled={unfollowUser.isPending}
+                      >
+                        <UserMinus className="w-4 h-4 mr-2" />
+                        Unfollow
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

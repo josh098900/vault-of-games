@@ -8,6 +8,7 @@ import { GroupsTab } from "@/components/social/GroupsTab";
 import { ChallengesTab } from "@/components/social/ChallengesTab";
 import { RecommendationsTab } from "@/components/social/RecommendationsTab";
 import { EventsTab } from "@/components/social/EventsTab";
+import { MessagesTab } from "@/components/social/MessagesTab";
 import { SocialActivityFeed } from "@/components/social/SocialActivityFeed";
 
 const Social = () => {
@@ -51,8 +52,9 @@ const Social = () => {
         </div>
 
         <Tabs defaultValue="friends" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="groups">Groups</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
@@ -61,6 +63,10 @@ const Social = () => {
           
           <TabsContent value="friends" className="mt-6">
             <FriendsTab />
+          </TabsContent>
+          
+          <TabsContent value="messages" className="mt-6">
+            <MessagesTab />
           </TabsContent>
           
           <TabsContent value="groups" className="mt-6">
