@@ -15,7 +15,7 @@ const GameDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { games } = useGames();
-  const { reviews, isLoading: reviewsLoading } = useReviews(id);
+  const { reviews, isLoading: reviewsLoading, toggleLike, toggleHelpful } = useReviews(id);
 
   // Get game from location state or fetch from games list
   const game: Game | undefined = location.state?.game || games.find(g => g.id === id);
@@ -40,6 +40,14 @@ const GameDetail = () => {
   const averageRating = gameReviews.length > 0 
     ? gameReviews.reduce((acc, review) => acc + review.rating, 0) / gameReviews.length 
     : 0;
+
+  const handleLike = (reviewId: string) => {
+    toggleLike.mutate(reviewId);
+  };
+
+  const handleHelpful = (reviewId: string) => {
+    toggleHelpful.mutate(reviewId);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,7 +154,12 @@ const GameDetail = () => {
             ) : gameReviews.length > 0 ? (
               <div className="space-y-4">
                 {gameReviews.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
+                  <ReviewCard 
+                    key={review.id} 
+                    review={review} 
+                    onLike={handleLike}
+                    onHelpful={handleHelpful}
+                  />
                 ))}
               </div>
             ) : (
