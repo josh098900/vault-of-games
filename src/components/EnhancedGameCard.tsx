@@ -2,20 +2,16 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Star, Eye, Plus, Clock, Check, Heart } from "lucide-react";
-import { Game, GameStatus, useUserGames } from "@/hooks/useUserGames";
+import { Game, useUserGames } from "@/hooks/useUserGames";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { QuickViewDialog } from "./QuickViewDialog";
 import { getGameImage } from "@/utils/gameImageMapping";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { AddToLibraryDropdown } from "./AddToLibraryDropdown";
+import { QuickViewButton } from "./QuickViewButton";
+import { LibraryStatusBadge, LibraryActionButton } from "./LibraryStatusBadge";
+import { GameCardActions } from "./GameCardActions";
 
 interface EnhancedGameCardProps {
   game: Game;
@@ -30,7 +26,7 @@ export const EnhancedGameCard = ({ game, onWriteReview }: EnhancedGameCardProps)
 
   const userGame = userGames.find(ug => ug.game_id === game.id);
 
-  const handleAddToLibrary = async (status: GameStatus) => {
+  const handleAddToLibrary = async (status: any) => {
     if (!user) {
       toast({
         title: "Sign in required",
@@ -76,54 +72,20 @@ export const EnhancedGameCard = ({ game, onWriteReview }: EnhancedGameCardProps)
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
           
-          {userGame && (
-            <Badge className="absolute top-2 left-2 bg-primary/80 text-primary-foreground">
-              In Library
-            </Badge>
-          )}
+          <LibraryStatusBadge userGame={userGame} />
 
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleQuickView}
-              className="bg-black/50 backdrop-blur-sm border-white/20"
-            >
-              <Eye className="w-3 h-3" />
-            </Button>
+            <QuickViewButton onQuickView={handleQuickView} />
           </div>
 
           <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             {!userGame ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="secondary" className="bg-black/50 backdrop-blur-sm border-white/20">
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleAddToLibrary("wishlist")}>
-                    <Heart className="w-4 h-4 mr-2 text-pink-400" />
-                    Add to Wishlist
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddToLibrary("playing")}>
-                    <Clock className="w-4 h-4 mr-2 text-blue-400" />
-                    Currently Playing
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddToLibrary("completed")}>
-                    <Check className="w-4 h-4 mr-2 text-green-400" />
-                    Mark as Completed
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleAddToLibrary("backlog")}>
-                    <Plus className="w-4 h-4 mr-2 text-yellow-400" />
-                    Add to Backlog
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <AddToLibraryDropdown 
+                onAddToLibrary={handleAddToLibrary}
+                isLoading={addGameToLibrary.isPending}
+              />
             ) : (
-              <Button size="sm" variant="secondary" className="bg-green-500/20 backdrop-blur-sm border-green-500/30" disabled>
-                <Check className="w-3 h-3" />
-              </Button>
+              <LibraryActionButton userGame={userGame} />
             )}
           </div>
         </div>
@@ -146,26 +108,11 @@ export const EnhancedGameCard = ({ game, onWriteReview }: EnhancedGameCardProps)
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onWriteReview?.(game)}
-                className="border-white/20 text-xs"
-              >
-                <Star className="w-3 h-3 mr-1" />
-                Rate
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleQuickView}
-                className="border-white/20 text-xs"
-              >
-                <Eye className="w-3 h-3 mr-1" />
-                Quick View
-              </Button>
-            </div>
+            <GameCardActions 
+              game={game}
+              onWriteReview={onWriteReview}
+              onQuickView={handleQuickView}
+            />
           </div>
         </CardContent>
       </Card>
