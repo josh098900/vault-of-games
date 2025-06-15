@@ -51,6 +51,10 @@ export const useGameSubmission = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["game-submissions"] });
+      toast({
+        title: "Game submitted successfully!",
+        description: "Your game submission is now pending review. You'll be notified when it's approved.",
+      });
     },
     onError: (error) => {
       console.error("Error submitting game:", error);

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -38,7 +37,7 @@ const gameSubmissionSchema = z.object({
   cover_image_url: z.string().url().optional().or(z.literal("")),
 });
 
-type GameSubmissionData = z.infer<typeof gameSubmissionSchema>;
+type GameSubmissionFormData = z.infer<typeof gameSubmissionSchema>;
 
 const genres = [
   "Action", "Adventure", "RPG", "Strategy", "Simulation", "Sports", 
@@ -55,7 +54,7 @@ export const GameSubmissionForm = () => {
   const [open, setOpen] = useState(false);
   const { submitGame, isSubmitting } = useGameSubmission();
 
-  const form = useForm<GameSubmissionData>({
+  const form = useForm<GameSubmissionFormData>({
     resolver: zodResolver(gameSubmissionSchema),
     defaultValues: {
       title: "",
@@ -68,22 +67,25 @@ export const GameSubmissionForm = () => {
     },
   });
 
-  const onSubmit = async (data: GameSubmissionData) => {
+  const onSubmit = async (data: GameSubmissionFormData) => {
     try {
-      await submitGame.mutateAsync(data);
-      toast({
-        title: "Game submitted successfully!",
-        description: "Your game submission is now pending review. You'll be notified when it's approved.",
-      });
+      // Transform form data to match GameSubmissionData interface
+      const submissionData = {
+        title: data.title,
+        description: data.description || undefined,
+        genre: data.genre,
+        platform: data.platform,
+        release_year: data.release_year,
+        developer: data.developer || undefined,
+        publisher: data.publisher || undefined,
+        cover_image_url: data.cover_image_url || undefined,
+      };
+
+      await submitGame.mutateAsync(submissionData);
       form.reset();
       setOpen(false);
     } catch (error) {
       console.error("Error submitting game:", error);
-      toast({
-        title: "Submission failed",
-        description: "Failed to submit game. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
