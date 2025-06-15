@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,7 @@ import DiscussionDetail from "./pages/DiscussionDetail";
 import Reviews from "./pages/Reviews";
 import Leaderboards from "./pages/Leaderboards";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/community/discussion/:id" element={<DiscussionDetail />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

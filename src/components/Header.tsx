@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -17,15 +16,18 @@ import {
   Trophy, 
   Star,
   MessageCircle,
-  Menu
+  Menu,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { NavigationDropdown } from "./NavigationDropdown";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
+  const { canReviewSubmissions } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -83,6 +85,17 @@ export const Header = () => {
             icon={<Users className="w-4 h-4" />}
             items={communityItems}
           />
+          {canReviewSubmissions && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate("/admin")}
+              className="flex items-center space-x-2"
+            >
+              <Shield className="w-4 h-4" />
+              <span>Admin</span>
+            </Button>
+          )}
         </nav>
 
         {/* User Actions */}
@@ -117,6 +130,12 @@ export const Header = () => {
                       <Settings className="w-4 h-4 mr-2" />
                       Edit Profile
                     </DropdownMenuItem>
+                    {canReviewSubmissions && (
+                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        <Shield className="w-4 h-4 mr-2" />
+                        Admin Panel
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
@@ -181,6 +200,15 @@ export const Header = () => {
                         <span className="text-xs text-muted-foreground">Account settings</span>
                       </div>
                     </DropdownMenuItem>
+                    {canReviewSubmissions && (
+                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        <Shield className="w-4 h-4 mr-3" />
+                        <div className="flex flex-col">
+                          <span>Admin Panel</span>
+                          <span className="text-xs text-muted-foreground">Review submissions</span>
+                        </div>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-3" />
                       <div className="flex flex-col">
