@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,14 +18,31 @@ export const EnhancedGameCard = ({ game, onWriteReview }: EnhancedGameCardProps)
 
   const handleLike = () => {
     setIsLiked(!isLiked);
-    // Add particle effect on like
-    if (!isLiked) {
-      // Trigger like animation
-    }
   };
 
   const handleQuickView = () => {
     setShowQuickView(true);
+  };
+
+  // Better fallback images based on game titles
+  const getGameImage = (game: Game) => {
+    if (game.cover_image_url && game.cover_image_url.includes('igdb.com')) {
+      return game.cover_image_url;
+    }
+    
+    // Use real game images as fallbacks
+    const gameImages: Record<string, string> = {
+      "Cyberpunk 2077": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.webp",
+      "The Last of Us Part II": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.webp",
+      "Hades": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.webp",
+      "Ghost of Tsushima": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rb6.webp",
+      "Baldur's Gate 3": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5f5z.webp",
+      "The Witcher 3": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.webp",
+      "Red Dead Redemption 2": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.webp",
+      "God of War": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.webp"
+    };
+    
+    return gameImages[game.title] || game.cover_image_url || "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.webp";
   };
 
   return (
@@ -42,7 +58,7 @@ export const EnhancedGameCard = ({ game, onWriteReview }: EnhancedGameCardProps)
         {/* Game Cover */}
         <div className="relative overflow-hidden">
           <img
-            src={game.cover_image_url || "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&h=400&fit=crop"}
+            src={getGameImage(game)}
             alt={game.title}
             className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
           />

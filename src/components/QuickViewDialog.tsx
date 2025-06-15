@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,23 @@ export const QuickViewDialog = ({ game, isOpen, onClose }: QuickViewDialogProps)
   if (!game) return null;
 
   const userGame = userGames.find(ug => ug.game_id === game.id);
+
+  // Better image handling for quick view
+  const getGameImage = (game: Game) => {
+    if (game.cover_image_url && game.cover_image_url.includes('igdb.com')) {
+      return game.cover_image_url.replace('t_cover_big', 't_1080p');
+    }
+    
+    const gameImages: Record<string, string> = {
+      "Cyberpunk 2077": "https://images.igdb.com/igdb/image/upload/t_1080p/co2lbd.webp",
+      "The Last of Us Part II": "https://images.igdb.com/igdb/image/upload/t_1080p/co1wyy.webp",
+      "Hades": "https://images.igdb.com/igdb/image/upload/t_1080p/co1tmu.webp",
+      "Ghost of Tsushima": "https://images.igdb.com/igdb/image/upload/t_1080p/co1rb6.webp",
+      "Baldur's Gate 3": "https://images.igdb.com/igdb/image/upload/t_1080p/co5f5z.webp"
+    };
+    
+    return gameImages[game.title] || game.cover_image_url || "https://images.igdb.com/igdb/image/upload/t_1080p/nocover.webp";
+  };
 
   const handleAddToLibrary = async (status: GameStatus) => {
     if (!user) {
@@ -81,7 +97,7 @@ export const QuickViewDialog = ({ game, isOpen, onClose }: QuickViewDialogProps)
           {/* Game Cover */}
           <div className="relative">
             <img
-              src={game.cover_image_url || "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=600&fit=crop"}
+              src={getGameImage(game)}
               alt={game.title}
               className="w-full h-64 md:h-80 object-cover rounded-lg"
             />
