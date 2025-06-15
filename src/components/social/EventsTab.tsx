@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Star, StarOff, ExternalLink, Plus } from "lucide-react";
 import { useEvents } from "@/hooks/useEvents";
+import { CreateEventDialog } from "./CreateEventDialog";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -93,10 +94,12 @@ export const EventsTab = () => {
           <h2 className="text-2xl font-bold">Gaming Events</h2>
           <p className="text-muted-foreground">Stay updated with the latest gaming events and releases</p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Event
-        </Button>
+        <CreateEventDialog>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Event
+          </Button>
+        </CreateEventDialog>
       </div>
 
       {interestedEvents.length > 0 && (
