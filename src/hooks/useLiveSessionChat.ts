@@ -31,7 +31,7 @@ export const useLiveSessionMessages = (sessionId: string) => {
           .from('live_session_messages' as any)
           .select(`
             *,
-            profiles!inner(username, display_name, avatar_url)
+            profiles(username, display_name, avatar_url)
           `)
           .eq('session_id', sessionId)
           .order('created_at', { ascending: true });
@@ -40,7 +40,7 @@ export const useLiveSessionMessages = (sessionId: string) => {
           console.error('Error fetching messages:', error);
           throw error;
         }
-        return (data || []) as LiveSessionMessage[];
+        return (data || []) as unknown as LiveSessionMessage[];
       } catch (error) {
         console.error('Failed to fetch session messages:', error);
         return [];
@@ -96,7 +96,7 @@ export const useSendSessionMessage = () => {
           })
           .select(`
             *,
-            profiles!inner(username, display_name, avatar_url)
+            profiles(username, display_name, avatar_url)
           `)
           .single();
 
@@ -104,7 +104,7 @@ export const useSendSessionMessage = () => {
           console.error('Error sending message:', error);
           throw error;
         }
-        return data;
+        return data as unknown as LiveSessionMessage;
       } catch (error) {
         console.error('Failed to send message:', error);
         throw error;
