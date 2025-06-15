@@ -10,6 +10,7 @@ import {
 import { Smile, Heart, ThumbsUp, Laugh, Frown, Angry } from "lucide-react";
 import { useMessageReactions, useAddReaction, useRemoveReaction } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const reactionEmojis = {
   like: { icon: ThumbsUp, emoji: "👍" },
@@ -27,17 +28,20 @@ interface MessageReactionsProps {
 
 export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageReactionsProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [showPicker, setShowPicker] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { data: reactions = [], refetch } = useMessageReactions(messageId, isGroupMessage);
   const addReaction = useAddReaction();
   const removeReaction = useRemoveReaction();
 
-  console.log("MessageReactions render:", { messageId, isGroupMessage, reactions });
+  console.log("MessageReactions render:", { messageId, isGroupMessage, reactions, userReactions: reactions.filter(r => r.user_id === user?.id) });
 
   const handleReactionClick = async (reactionType: string) => {
-    if (!user) return;
+    if (!user || isProcessing) return;
 
-    console.log("Handling reaction click:", { reactionType, messageId, isGroupMessage });
+    console.log("Handling reaction click:", { reactionType, messageId, isGroupMessage, userId: user.id });
+    setIsProcessing(true);
 
     const existingReaction = reactions.find(
       r => r.user_id === user.id && r.reaction_type === reactionType
@@ -46,17 +50,39 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
     try {
       if (existingReaction) {
         console.log("Removing existing reaction:", existingReaction);
-        await removeReaction.mutateAsync({ messageId, reactionType, isGroupMessage });
+        await removeReaction.mutateAsync({ 
+          messageId, 
+          reactionType, 
+          isGroupMessage 
+        });
+        console.log("Reaction removed successfully");
       } else {
         console.log("Adding new reaction");
-        await addReaction.mutateAsync({ messageId, reactionType, isGroupMessage });
+        await addReaction.mutateAsync({ 
+          messageId, 
+          reactionType, 
+          isGroupMessage 
+        });
+        console.log("Reaction added successfully");
       }
       
-      // Manually refetch to ensure we get the latest data
-      await refetch();
+      // Wait a bit before refetching to ensure database consistency
+      setTimeout(async () => {
+        await refetch();
+        setIsProcessing(false);
+      }, 100);
+      
       setShowPicker(false);
     } catch (error) {
       console.error("Error handling reaction:", error);
+      setIsProcessing(false);
+      
+      // Show user-friendly error message
+      toast({
+        title: "Error",
+        description: "Failed to update reaction. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -81,7 +107,9 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
         <Badge
           key={type}
           variant={userReactions.includes(type) ? "default" : "secondary"}
-          className="px-2 py-0 text-xs cursor-pointer hover:bg-primary/80"
+          className={`px-2 py-0 text-xs cursor-pointer hover:bg-primary/80 ${
+            isProcessing ? 'opacity-50 pointer-events-none' : ''
+          }`}
           onClick={() => handleReactionClick(type)}
         >
           <span className="mr-1">{reactionEmojis[type as keyof typeof reactionEmojis]?.emoji}</span>
@@ -92,7 +120,12 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
       {/* Add reaction button */}
       <Popover open={showPicker} onOpenChange={setShowPicker}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`h-6 w-6 p-0 ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}
+            disabled={isProcessing}
+          >
             <Smile className="w-3 h-3" />
           </Button>
         </PopoverTrigger>
@@ -105,6 +138,7 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
                 size="sm"
                 className="h-8 w-8 p-0 hover:bg-muted"
                 onClick={() => handleReactionClick(type)}
+                disabled={isProcessing}
               >
                 {emoji}
               </Button>

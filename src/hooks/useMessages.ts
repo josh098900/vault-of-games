@@ -490,6 +490,21 @@ export const useAddReaction = () => {
       console.log("Adding reaction:", { messageId, reactionType, isGroupMessage });
       
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
+      
+      // First check if reaction already exists to avoid duplicate key error
+      const { data: existingReaction } = await supabase
+        .from(table)
+        .select("id")
+        .eq("message_id", messageId)
+        .eq("user_id", user!.id)
+        .eq("reaction_type", reactionType)
+        .maybeSingle();
+
+      if (existingReaction) {
+        console.log("Reaction already exists, skipping insert");
+        return existingReaction;
+      }
+
       const { data, error } = await supabase
         .from(table)
         .insert({
@@ -502,6 +517,11 @@ export const useAddReaction = () => {
 
       if (error) {
         console.error("Error adding reaction:", error);
+        // If it's a duplicate key error, just ignore it
+        if (error.code === '23505') {
+          console.log("Duplicate key error ignored - reaction already exists");
+          return null;
+        }
         throw error;
       }
       
@@ -512,6 +532,9 @@ export const useAddReaction = () => {
       console.log("Invalidating queries for message:", messageId);
       queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
     },
+    onError: (error) => {
+      console.error("Mutation error:", error);
+    }
   });
 };
 
@@ -550,6 +573,9 @@ export const useRemoveReaction = () => {
       console.log("Invalidating queries for message:", messageId);
       queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
     },
+    onError: (error) => {
+      console.error("Mutation error:", error);
+    }
   });
 };
 
