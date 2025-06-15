@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, ArrowLeft } from "lucide-react";
 import { useConversations, useMessages, useSendMessage } from "@/hooks/useMessages";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MessagesTabProps {
   initialSelectedConversation?: string | null;
@@ -18,6 +20,7 @@ export const MessagesTab = ({
   initialSelectedConversation, 
   onConversationChange 
 }: MessagesTabProps) => {
+  const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(
     initialSelectedConversation || null
   );
@@ -26,6 +29,9 @@ export const MessagesTab = ({
   const { data: conversations = [], isLoading: conversationsLoading } = useConversations();
   const { data: messages = [], isLoading: messagesLoading } = useMessages(selectedConversation || "");
   const sendMessage = useSendMessage();
+
+  console.log("MessagesTab - selectedConversation:", selectedConversation);
+  console.log("MessagesTab - messages:", messages);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,17 +57,18 @@ export const MessagesTab = ({
 
   // Notify parent when conversation changes
   const handleConversationSelect = (conversationId: string | null) => {
+    console.log("Selecting conversation:", conversationId);
     setSelectedConversation(conversationId);
     onConversationChange?.(conversationId);
   };
 
   if (selectedConversation) {
-    const conversation = conversations.find(conv => {
-      const otherUserId = conv.user1_id !== conv.user2_id ? 
-        (conv.user1_id === selectedConversation ? conv.user1_id : conv.user2_id) : 
-        selectedConversation;
-      return conv.user1_id === selectedConversation || conv.user2_id === selectedConversation;
-    });
+    // Find the conversation to get other user details
+    const conversation = conversations.find(conv => conv.other_user_id === selectedConversation);
+    
+    // If we don't have conversation details yet, we can still show the chat
+    // by using the selectedConversation as the other user ID
+    const otherUserProfile = conversation?.other_user_profile;
 
     return (
       <Card>
@@ -75,19 +82,19 @@ export const MessagesTab = ({
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <Avatar className="w-8 h-8">
-              <AvatarImage src={conversation?.other_user_profile?.avatar_url || ""} />
+              <AvatarImage src={otherUserProfile?.avatar_url || ""} />
               <AvatarFallback>
-                {conversation?.other_user_profile?.display_name?.[0] || 
-                 conversation?.other_user_profile?.username?.[0] || "U"}
+                {otherUserProfile?.display_name?.[0] || 
+                 otherUserProfile?.username?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
             <div>
               <CardTitle className="text-lg">
-                {conversation?.other_user_profile?.display_name || 
-                 conversation?.other_user_profile?.username || "Unknown User"}
+                {otherUserProfile?.display_name || 
+                 otherUserProfile?.username || "Unknown User"}
               </CardTitle>
               <CardDescription>
-                @{conversation?.other_user_profile?.username || "anonymous"}
+                @{otherUserProfile?.username || "anonymous"}
               </CardDescription>
             </div>
           </div>
@@ -103,25 +110,30 @@ export const MessagesTab = ({
                     No messages yet. Start a conversation!
                   </div>
                 ) : (
-                  messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.sender_id === selectedConversation ? "justify-start" : "justify-end"}`}
-                    >
+                  messages.map((message) => {
+                    const isCurrentUser = message.sender_id === user?.id;
+                    console.log("Message:", message.content, "from:", message.sender_id, "isCurrentUser:", isCurrentUser);
+                    
+                    return (
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.sender_id === selectedConversation
-                            ? "bg-muted text-foreground"
-                            : "bg-primary text-primary-foreground"
-                        }`}
+                        key={message.id}
+                        className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <p className="text-xs opacity-70 mt-1">
-                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                        </p>
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            isCurrentUser
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground"
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </ScrollArea>
@@ -181,50 +193,43 @@ export const MessagesTab = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {conversations.map((conversation) => {
-              const otherUserId = conversation.user1_id === conversation.user2_id ? 
-                conversation.user1_id : 
-                (conversation.user1_id !== conversation.user2_id ? 
-                  conversation.user2_id : conversation.user1_id);
-              
-              return (
-                <div
-                  key={conversation.id}
-                  className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => handleConversationSelect(otherUserId)}
-                >
-                  <Avatar>
-                    <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
-                    <AvatarFallback>
-                      {conversation.other_user_profile?.display_name?.[0] || 
-                       conversation.other_user_profile?.username?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium truncate">
-                        {conversation.other_user_profile?.display_name || 
-                         conversation.other_user_profile?.username || "Unknown User"}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {conversation.unread_count > 0 && (
-                          <Badge variant="destructive" className="text-xs">
-                            {conversation.unread_count}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {conversation.last_message || "No messages yet"}
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => handleConversationSelect(conversation.other_user_id)}
+              >
+                <Avatar>
+                  <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
+                  <AvatarFallback>
+                    {conversation.other_user_profile?.display_name?.[0] || 
+                     conversation.other_user_profile?.username?.[0] || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium truncate">
+                      {conversation.other_user_profile?.display_name || 
+                       conversation.other_user_profile?.username || "Unknown User"}
                     </p>
+                    <div className="flex items-center gap-2">
+                      {conversation.unread_count > 0 && (
+                        <Badge variant="destructive" className="text-xs">
+                          {conversation.unread_count}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
+                      </span>
+                    </div>
                   </div>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {conversation.last_message || "No messages yet"}
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

@@ -24,6 +24,7 @@ export interface Conversation {
   user2_id: string;
   last_message_at: string;
   created_at: string;
+  other_user_id: string; // Add this for easier access
   other_user_profile?: {
     username: string | null;
     display_name: string | null;
@@ -51,9 +52,10 @@ export const useConversations = () => {
       if (error) throw error;
       if (!conversations || conversations.length === 0) return [];
 
-      // Get profiles and messages for each conversation
+      // Process conversations to get other user details and last messages
       const conversationsWithData = await Promise.all(
         conversations.map(async (conv) => {
+          // Determine the other user ID
           const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id;
           
           // Get other user's profile
@@ -63,17 +65,17 @@ export const useConversations = () => {
             .eq("id", otherUserId)
             .single();
 
-          // Get messages for this conversation
-          const { data: messages } = await supabase
+          // Get the most recent message in this conversation
+          const { data: lastMessageData } = await supabase
             .from("direct_messages")
-            .select("content, created_at, is_read, sender_id")
-            .or(`and(sender_id.eq.${conv.user1_id},recipient_id.eq.${conv.user2_id}),and(sender_id.eq.${conv.user2_id},recipient_id.eq.${conv.user1_id})`)
+            .select("content, created_at, sender_id")
+            .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user.id})`)
             .order("created_at", { ascending: false })
             .limit(1);
 
-          const lastMessage = messages && messages.length > 0 ? messages[0] : null;
+          const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
 
-          // Count unread messages
+          // Count unread messages from the other user to current user
           const { count: unreadCount } = await supabase
             .from("direct_messages")
             .select("*", { count: "exact", head: true })
@@ -83,6 +85,7 @@ export const useConversations = () => {
 
           return {
             ...conv,
+            other_user_id: otherUserId,
             other_user_profile: profile,
             last_message: lastMessage?.content,
             unread_count: unreadCount || 0
@@ -96,43 +99,57 @@ export const useConversations = () => {
   });
 };
 
-export const useMessages = (recipientId: string) => {
+export const useMessages = (otherUserId: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["messages", user?.id, recipientId],
+    queryKey: ["messages", user?.id, otherUserId],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !otherUserId) return [];
 
-      // Get messages between current user and recipient
+      console.log("Fetching messages between:", user.id, "and", otherUserId);
+
+      // Get all messages between current user and the other user
       const { data: messages, error } = await supabase
         .from("direct_messages")
         .select("*")
-        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id})`)
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user.id})`)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      if (!messages) return [];
+      if (error) {
+        console.error("Error fetching messages:", error);
+        throw error;
+      }
+      
+      console.log("Raw messages:", messages);
 
-      // Get sender profiles for all messages
-      const messagesWithProfiles = await Promise.all(
-        messages.map(async (message) => {
-          const { data: senderProfile } = await supabase
-            .from("profiles")
-            .select("username, display_name, avatar_url")
-            .eq("id", message.sender_id)
-            .single();
+      if (!messages || messages.length === 0) return [];
 
-          return {
-            ...message,
-            sender_profile: senderProfile
-          };
-        })
-      );
+      // Get unique sender IDs to fetch their profiles
+      const senderIds = [...new Set(messages.map(msg => msg.sender_id))];
+      
+      // Fetch profiles for all senders
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", senderIds);
 
+      // Create a profile lookup map
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
+      // Attach profiles to messages
+      const messagesWithProfiles = messages.map(message => ({
+        ...message,
+        sender_profile: profileMap.get(message.sender_id) || null
+      }));
+
+      console.log("Messages with profiles:", messagesWithProfiles);
       return messagesWithProfiles as DirectMessage[];
     },
-    enabled: !!user && !!recipientId,
+    enabled: !!user && !!otherUserId,
   });
 };
 

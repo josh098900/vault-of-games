@@ -26,8 +26,9 @@ export const MessageDropdown = () => {
 
   const recentConversations = conversations.slice(0, 5);
 
-  const handleConversationClick = (conversationId: string) => {
-    navigate("/social", { state: { selectedConversation: conversationId } });
+  const handleConversationClick = (otherUserId: string) => {
+    console.log("Navigating to conversation with user:", otherUserId);
+    navigate("/social", { state: { selectedConversation: otherUserId } });
     setOpen(false);
   };
 
@@ -69,50 +70,43 @@ export const MessageDropdown = () => {
           </div>
         ) : (
           <ScrollArea className="max-h-64">
-            {recentConversations.map((conversation) => {
-              const otherUserId = conversation.user1_id === conversation.user2_id ? 
-                conversation.user1_id : 
-                (conversation.user1_id !== conversation.user2_id ? 
-                  conversation.user2_id : conversation.user1_id);
-              
-              return (
-                <DropdownMenuItem
-                  key={conversation.id}
-                  onClick={() => handleConversationClick(otherUserId)}
-                  className={`flex items-center gap-3 p-3 cursor-pointer ${
-                    conversation.unread_count > 0 ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                  }`}
-                >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
-                    <AvatarFallback>
-                      {conversation.other_user_profile?.display_name?.[0] || 
-                       conversation.other_user_profile?.username?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm truncate">
-                        {conversation.other_user_profile?.display_name || 
-                         conversation.other_user_profile?.username || "Unknown User"}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {conversation.unread_count > 0 && (
-                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {conversation.last_message || "No messages yet"}
+            {recentConversations.map((conversation) => (
+              <DropdownMenuItem
+                key={conversation.id}
+                onClick={() => handleConversationClick(conversation.other_user_id)}
+                className={`flex items-center gap-3 p-3 cursor-pointer ${
+                  conversation.unread_count > 0 ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                }`}
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
+                  <AvatarFallback>
+                    {conversation.other_user_profile?.display_name?.[0] || 
+                     conversation.other_user_profile?.username?.[0] || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-sm truncate">
+                      {conversation.other_user_profile?.display_name || 
+                       conversation.other_user_profile?.username || "Unknown User"}
                     </p>
+                    <div className="flex items-center gap-2">
+                      {conversation.unread_count > 0 && (
+                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
+                      </span>
+                    </div>
                   </div>
-                </DropdownMenuItem>
-              );
-            })}
+                  <p className="text-xs text-muted-foreground truncate">
+                    {conversation.last_message || "No messages yet"}
+                  </p>
+                </div>
+              </DropdownMenuItem>
+            ))}
           </ScrollArea>
         )}
         
