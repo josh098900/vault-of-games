@@ -140,6 +140,81 @@ export type Database = {
           },
         ]
       }
+      game_submissions: {
+        Row: {
+          admin_notes: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          developer: string | null
+          genre: string | null
+          id: string
+          igdb_id: string | null
+          metacritic_score: number | null
+          platform: string | null
+          publisher: string | null
+          release_year: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          screenshots: string[] | null
+          status: string | null
+          steam_id: string | null
+          submitted_by: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          videos: string[] | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          developer?: string | null
+          genre?: string | null
+          id?: string
+          igdb_id?: string | null
+          metacritic_score?: number | null
+          platform?: string | null
+          publisher?: string | null
+          release_year?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshots?: string[] | null
+          status?: string | null
+          steam_id?: string | null
+          submitted_by: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          videos?: string[] | null
+        }
+        Update: {
+          admin_notes?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          developer?: string | null
+          genre?: string | null
+          id?: string
+          igdb_id?: string | null
+          metacritic_score?: number | null
+          platform?: string | null
+          publisher?: string | null
+          release_year?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshots?: string[] | null
+          status?: string | null
+          steam_id?: string | null
+          submitted_by?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          videos?: string[] | null
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           cover_image_url: string | null
@@ -148,11 +223,19 @@ export type Database = {
           developer: string | null
           genre: string | null
           id: string
+          igdb_id: string | null
+          metacritic_score: number | null
           platform: string | null
           publisher: string | null
           release_year: number | null
+          screenshots: string[] | null
+          steam_id: string | null
+          submission_status: string | null
+          submitted_by: string | null
+          tags: string[] | null
           title: string
           updated_at: string
+          videos: string[] | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -161,11 +244,19 @@ export type Database = {
           developer?: string | null
           genre?: string | null
           id?: string
+          igdb_id?: string | null
+          metacritic_score?: number | null
           platform?: string | null
           publisher?: string | null
           release_year?: number | null
+          screenshots?: string[] | null
+          steam_id?: string | null
+          submission_status?: string | null
+          submitted_by?: string | null
+          tags?: string[] | null
           title: string
           updated_at?: string
+          videos?: string[] | null
         }
         Update: {
           cover_image_url?: string | null
@@ -174,11 +265,19 @@ export type Database = {
           developer?: string | null
           genre?: string | null
           id?: string
+          igdb_id?: string | null
+          metacritic_score?: number | null
           platform?: string | null
           publisher?: string | null
           release_year?: number | null
+          screenshots?: string[] | null
+          steam_id?: string | null
+          submission_status?: string | null
+          submitted_by?: string | null
+          tags?: string[] | null
           title?: string
           updated_at?: string
+          videos?: string[] | null
         }
         Relationships: []
       }
@@ -414,6 +513,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_game_submission: {
+        Args: { submission_id: string; admin_user_id: string }
+        Returns: string
+      }
       create_notification: {
         Args: {
           p_user_id: string
@@ -426,6 +529,14 @@ export type Database = {
       }
       increment_discussion_views: {
         Args: { discussion_uuid: string }
+        Returns: undefined
+      }
+      reject_game_submission: {
+        Args: {
+          submission_id: string
+          admin_user_id: string
+          rejection_reason?: string
+        }
         Returns: undefined
       }
     }

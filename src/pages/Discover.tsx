@@ -7,12 +7,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Filter, Calendar } from "lucide-react";
 import { Header } from "@/components/Header";
 import { GameCard } from "@/components/GameCard";
+import { GameSubmissionForm } from "@/components/GameSubmissionForm";
+import { BulkGameImport } from "@/components/BulkGameImport";
 import { useGames } from "@/hooks/useGames";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Discover = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("all");
   const { games, isLoading } = useGames();
+  const { user } = useAuth();
 
   // Get unique genres from games
   const genres = ["all", ...Array.from(new Set(games.map(game => game.genre).filter(Boolean)))];
@@ -58,10 +62,14 @@ const Discover = () => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Advanced Filters
-            </Button>
+            <div className="flex gap-2">
+              <GameSubmissionForm />
+              {user && <BulkGameImport />}
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Advanced Filters
+              </Button>
+            </div>
           </div>
 
           {/* Genre Filter */}
@@ -115,7 +123,8 @@ const Discover = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No games found matching your criteria.</p>
+              <p className="text-muted-foreground mb-4">No games found matching your criteria.</p>
+              <GameSubmissionForm />
             </div>
           )}
         </section>
