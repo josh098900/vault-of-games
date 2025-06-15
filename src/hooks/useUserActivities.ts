@@ -31,7 +31,7 @@ export const useUserActivities = () => {
         .from("user_activities")
         .select(`
           *,
-          profiles (
+          profiles!user_activities_user_id_fkey (
             id,
             username,
             display_name,
