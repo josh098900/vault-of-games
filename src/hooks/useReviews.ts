@@ -17,7 +17,7 @@ export interface Review {
   games?: {
     title: string;
     cover_image_url: string;
-  };
+  } | null;
   profiles?: {
     username: string;
     display_name: string;
@@ -76,21 +76,26 @@ export const useReviews = (gameId?: string) => {
 
       console.log("Creating review with data:", reviewData);
 
+      // Map the form data to database schema
+      const dbData = {
+        user_id: user.id,
+        game_id: reviewData.gameId, // Map gameId to game_id
+        rating: reviewData.rating,
+        title: reviewData.title,
+        content: reviewData.content,
+      };
+
+      console.log("Mapped database data:", dbData);
+
       const { data, error } = await supabase
         .from("reviews")
-        .insert({
-          user_id: user.id,
-          game_id: reviewData.gameId,
-          rating: reviewData.rating,
-          title: reviewData.title,
-          content: reviewData.content,
-        })
+        .insert(dbData)
         .select(`
           *,
           games (title, cover_image_url),
           profiles (username, display_name, avatar_url)
         `)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error("Error creating review:", error);
@@ -120,12 +125,21 @@ export const useReviews = (gameId?: string) => {
         throw new Error("User not authenticated");
       }
 
+      // Map the update data properly
+      const dbUpdateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (updateData.gameId) dbUpdateData.game_id = updateData.gameId;
+      if (updateData.rating !== undefined) dbUpdateData.rating = updateData.rating;
+      if (updateData.title) dbUpdateData.title = updateData.title;
+      if (updateData.content) dbUpdateData.content = updateData.content;
+
+      console.log("Updating review with data:", dbUpdateData);
+
       const { data, error } = await supabase
         .from("reviews")
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString(),
-        })
+        .update(dbUpdateData)
         .eq("id", reviewId)
         .eq("user_id", user.id) // Ensure user can only update their own reviews
         .select(`
@@ -133,7 +147,7 @@ export const useReviews = (gameId?: string) => {
           games (title, cover_image_url),
           profiles (username, display_name, avatar_url)
         `)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error("Error updating review:", error);

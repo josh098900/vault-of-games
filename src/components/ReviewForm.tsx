@@ -20,7 +20,8 @@ import { CreateReviewData, Review } from "@/hooks/useReviews";
 import { Game } from "@/hooks/useUserGames";
 
 const reviewSchema = z.object({
-  rating: z.number().min(1).max(5),
+  gameId: z.string().min(1, "Game ID is required"),
+  rating: z.number().min(1, "Rating is required").max(5),
   title: z.string().min(1, "Title is required").max(100, "Title too long"),
   content: z.string().min(10, "Review must be at least 10 characters").max(1000, "Review too long"),
 });
@@ -54,8 +55,25 @@ export const ReviewForm = ({
   });
 
   const handleSubmit = async (data: CreateReviewData) => {
+    console.log("Form submitting with data:", data);
+    console.log("Selected rating:", selectedRating);
+    
+    if (selectedRating === 0) {
+      console.error("No rating selected");
+      return;
+    }
+
     try {
-      await onSubmit({ ...data, rating: selectedRating });
+      const reviewData: CreateReviewData = {
+        ...data,
+        gameId: game.id, // Ensure we always use the correct game ID
+        rating: selectedRating,
+      };
+      
+      console.log("Final review data:", reviewData);
+      await onSubmit(reviewData);
+      
+      // Reset form on successful submission
       form.reset();
       setSelectedRating(0);
     } catch (error) {
