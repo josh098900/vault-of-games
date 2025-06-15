@@ -29,7 +29,7 @@ interface Follower {
     username: string;
     display_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps) => {
@@ -59,8 +59,12 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         `)
         .eq('following_id', user.id);
 
-      if (error) throw error;
-      return data as Follower[];
+      if (error) {
+        console.error('Error fetching followers:', error);
+        throw error;
+      }
+      
+      return (data || []).filter(item => item.profiles !== null) as Follower[];
     },
     enabled: !!user && open,
   });
@@ -181,30 +185,30 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
                   <div
                     key={follower.id}
                     className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${
-                      selectedUsers.includes(follower.profiles.id)
+                      selectedUsers.includes(follower.profiles!.id)
                         ? 'bg-primary/10 border border-primary/20'
                         : 'hover:bg-muted'
                     }`}
-                    onClick={() => handleUserToggle(follower.profiles.id)}
+                    onClick={() => handleUserToggle(follower.profiles!.id)}
                   >
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={follower.profiles.avatar_url || ""} />
+                      <AvatarImage src={follower.profiles?.avatar_url || ""} />
                       <AvatarFallback>
-                        {follower.profiles.display_name?.[0] || 
-                         follower.profiles.username?.[0] || "U"}
+                        {follower.profiles?.display_name?.[0] || 
+                         follower.profiles?.username?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">
-                        {follower.profiles.display_name || follower.profiles.username}
+                        {follower.profiles?.display_name || follower.profiles?.username}
                       </p>
-                      {follower.profiles.username && follower.profiles.display_name && (
+                      {follower.profiles?.username && follower.profiles?.display_name && (
                         <p className="text-sm text-muted-foreground truncate">
                           @{follower.profiles.username}
                         </p>
                       )}
                     </div>
-                    {selectedUsers.includes(follower.profiles.id) && (
+                    {selectedUsers.includes(follower.profiles!.id) && (
                       <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                         <div className="w-2 h-2 bg-primary-foreground rounded-full"></div>
                       </div>

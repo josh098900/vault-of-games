@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +17,19 @@ interface LiveSessionDetailViewProps {
   sessionId: string;
 }
 
+interface Participant {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  left_at: string | null;
+  profiles: {
+    username: string;
+    display_name: string;
+    avatar_url: string;
+  } | null;
+}
+
 export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps) => {
   const { user } = useAuth();
   const joinSession = useJoinGamingSession();
@@ -26,6 +38,8 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
   const { data: session, isLoading, error } = useQuery({
     queryKey: ['live-session-detail', sessionId],
     queryFn: async () => {
+      console.log('Fetching session detail for:', sessionId);
+      
       const { data, error } = await supabase
         .from('live_gaming_sessions')
         .select(`
@@ -42,9 +56,15 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
           )
         `)
         .eq('id', sessionId)
+        .eq('status', 'active')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching session:', error);
+        throw error;
+      }
+      
+      console.log('Successfully fetched session:', data);
       return data;
     },
   });
@@ -61,18 +81,22 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
   }
 
   if (error || !session) {
+    console.error('Session not found or error:', error);
     return (
       <Card>
         <CardContent className="p-6 text-center">
           <p className="text-muted-foreground">Session not found or no longer active.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            The session may have ended or you may not have permission to view it.
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   const isHost = session.user_id === user?.id;
-  const activeParticipants = session.gaming_session_participants?.filter(p => !p.left_at) || [];
-  const isParticipant = activeParticipants.some(p => p.user_id === user?.id);
+  const activeParticipants = (session.gaming_session_participants || []).filter((p: Participant) => !p.left_at);
+  const isParticipant = activeParticipants.some((p: Participant) => p.user_id === user?.id);
 
   const getSessionTypeIcon = (type: string) => {
     switch (type) {
