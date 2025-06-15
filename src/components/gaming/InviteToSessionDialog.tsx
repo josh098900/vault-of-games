@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,9 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
     queryFn: async () => {
       if (!user) return [];
 
-      // First get the follower IDs
+      console.log('Fetching followers for user:', user.id);
+
+      // First get the follower relationships
       const { data: followData, error: followError } = await supabase
         .from('user_follows')
         .select('id, follower_id')
@@ -55,10 +58,17 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         throw followError;
       }
 
-      if (!followData || followData.length === 0) return [];
+      console.log('Follow data:', followData);
 
-      // Then get the profile data for those followers
+      if (!followData || followData.length === 0) {
+        console.log('No followers found');
+        return [];
+      }
+
+      // Get profile data for followers
       const followerIds = followData.map(f => f.follower_id);
+      console.log('Follower IDs:', followerIds);
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
@@ -69,31 +79,49 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         throw profileError;
       }
 
-      // Combine the data
-      const combinedData = followData.map(follow => {
+      console.log('Profile data:', profileData);
+
+      // Combine the data manually
+      const combinedData: Follower[] = followData.map(follow => {
         const profile = profileData?.find(p => p.id === follow.follower_id);
         return {
           id: follow.id,
           follower_id: follow.follower_id,
-          profiles: profile || null
+          profiles: profile ? {
+            id: profile.id,
+            username: profile.username,
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url
+          } : null
         };
       }).filter(item => item.profiles !== null);
 
-      return combinedData as Follower[];
+      console.log('Combined followers data:', combinedData);
+      return combinedData;
     },
     enabled: !!user && open,
   });
 
   const inviteUsers = useMutation({
     mutationFn: async (userIds: string[]) => {
+      console.log('Sending invites to users:', userIds);
+      
       // Get session details first
       const { data: session, error: sessionError } = await supabase
         .from('live_gaming_sessions')
-        .select('*, games(title)')
+        .select(`
+          *,
+          games!inner(title)
+        `)
         .eq('id', sessionId)
         .single();
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        throw sessionError;
+      }
+
+      console.log('Session data:', session);
 
       // Create notifications for each invited user
       const notifications = userIds.map(userId => ({
@@ -109,11 +137,18 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         }
       }));
 
+      console.log('Creating notifications:', notifications);
+
       const { error } = await supabase
         .from('notifications')
         .insert(notifications);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating notifications:', error);
+        throw error;
+      }
+
+      console.log('Invites sent successfully');
     },
     onSuccess: () => {
       toast({
