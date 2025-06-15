@@ -285,42 +285,47 @@ export const useGroupMessages = (groupId: string) => {
 };
 
 export const useMessageReactions = (messageId: string, isGroupMessage = false) => {
-  const queryClient = useQueryClient();
-  
   return useQuery({
     queryKey: ["message_reactions", messageId, isGroupMessage],
     queryFn: async () => {
-      if (!messageId) return [];
+      if (!messageId) {
+        console.log("No messageId provided for reactions query");
+        return [];
+      }
 
-      console.log("Fetching reactions for message:", messageId, "isGroup:", isGroupMessage);
+      console.log("=== Fetching Reactions ===");
+      console.log("Message ID:", messageId);
+      console.log("Is group message:", isGroupMessage);
 
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
+      console.log("Using table:", table);
+      
       const { data: reactions, error } = await supabase
         .from(table)
         .select(`
-          *,
-          profiles:user_id(username, display_name, avatar_url)
+          id,
+          message_id,
+          user_id,
+          reaction_type,
+          created_at
         `)
         .eq("message_id", messageId);
 
       if (error) {
-        console.error("Error fetching reactions:", error);
+        console.error("=== Reactions Query Error ===", error);
         throw error;
       }
 
-      console.log("Fetched reactions:", reactions);
+      console.log("=== Reactions Query Success ===");
+      console.log("Raw data:", reactions);
+      console.log("Count:", reactions?.length || 0);
 
-      const reactionsWithProfiles = reactions?.map(reaction => ({
-        ...reaction,
-        user_profile: reaction.profiles
-      })) || [];
-
-      console.log("Reactions with profiles:", reactionsWithProfiles);
-      return reactionsWithProfiles;
+      return reactions || [];
     },
     enabled: !!messageId,
     refetchOnWindowFocus: false,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 0, // Always refetch to get latest data
+    gcTime: 0, // Don't cache
   });
 };
 
@@ -487,53 +492,64 @@ export const useAddReaction = () => {
       reactionType: string; 
       isGroupMessage?: boolean;
     }) => {
-      console.log("Adding reaction:", { messageId, reactionType, isGroupMessage });
+      console.log("=== Add Reaction Mutation ===");
+      console.log("Input:", { messageId, reactionType, isGroupMessage, userId: user?.id });
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
       
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
+      console.log("Using table:", table);
       
-      // First check if reaction already exists to avoid duplicate key error
-      const { data: existingReaction } = await supabase
+      // First check if reaction already exists
+      const { data: existingReaction, error: checkError } = await supabase
         .from(table)
         .select("id")
         .eq("message_id", messageId)
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("reaction_type", reactionType)
         .maybeSingle();
 
+      if (checkError) {
+        console.error("Error checking existing reaction:", checkError);
+        throw checkError;
+      }
+
       if (existingReaction) {
-        console.log("Reaction already exists, skipping insert");
+        console.log("Reaction already exists, skipping insert:", existingReaction);
         return existingReaction;
       }
 
+      console.log("Inserting new reaction...");
       const { data, error } = await supabase
         .from(table)
         .insert({
           message_id: messageId,
-          user_id: user!.id,
+          user_id: user.id,
           reaction_type: reactionType,
         })
         .select()
         .single();
 
       if (error) {
-        console.error("Error adding reaction:", error);
-        // If it's a duplicate key error, just ignore it
+        console.error("=== Insert Error ===", error);
         if (error.code === '23505') {
-          console.log("Duplicate key error ignored - reaction already exists");
+          console.log("Duplicate key error - reaction already exists");
           return null;
         }
         throw error;
       }
       
-      console.log("Reaction added:", data);
+      console.log("=== Reaction Added Successfully ===", data);
       return data;
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
-      console.log("Invalidating queries for message:", messageId);
+      console.log("=== Add Reaction Success - Invalidating Queries ===");
       queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
     },
     onError: (error) => {
-      console.error("Mutation error:", error);
+      console.error("=== Add Reaction Mutation Error ===", error);
     }
   });
 };
@@ -552,29 +568,36 @@ export const useRemoveReaction = () => {
       reactionType: string; 
       isGroupMessage?: boolean;
     }) => {
-      console.log("Removing reaction:", { messageId, reactionType, isGroupMessage });
+      console.log("=== Remove Reaction Mutation ===");
+      console.log("Input:", { messageId, reactionType, isGroupMessage, userId: user?.id });
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
       
       const table = isGroupMessage ? "group_message_reactions" : "message_reactions";
+      console.log("Using table:", table);
+      
       const { error } = await supabase
         .from(table)
         .delete()
         .eq("message_id", messageId)
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("reaction_type", reactionType);
 
       if (error) {
-        console.error("Error removing reaction:", error);
+        console.error("=== Remove Reaction Error ===", error);
         throw error;
       }
       
-      console.log("Reaction removed successfully");
+      console.log("=== Reaction Removed Successfully ===");
     },
     onSuccess: (_, { messageId, isGroupMessage }) => {
-      console.log("Invalidating queries for message:", messageId);
+      console.log("=== Remove Reaction Success - Invalidating Queries ===");
       queryClient.invalidateQueries({ queryKey: ["message_reactions", messageId, isGroupMessage] });
     },
     onError: (error) => {
-      console.error("Mutation error:", error);
+      console.error("=== Remove Reaction Mutation Error ===", error);
     }
   });
 };

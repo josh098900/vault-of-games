@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,25 +30,42 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
   const { toast } = useToast();
   const [showPicker, setShowPicker] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { data: reactions = [], refetch } = useMessageReactions(messageId, isGroupMessage);
+  
+  console.log("=== MessageReactions Component Debug ===");
+  console.log("Props:", { messageId, isGroupMessage });
+  console.log("User:", user?.id);
+  
+  const { data: reactions = [], refetch, isLoading, error } = useMessageReactions(messageId, isGroupMessage);
   const addReaction = useAddReaction();
   const removeReaction = useRemoveReaction();
 
-  console.log("MessageReactions render:", { messageId, isGroupMessage, reactions, userReactions: reactions.filter(r => r.user_id === user?.id) });
+  console.log("Query state:", { isLoading, error, reactionsCount: reactions.length });
+  console.log("Raw reactions data:", reactions);
 
   const handleReactionClick = async (reactionType: string) => {
-    if (!user || isProcessing) return;
+    if (!user || isProcessing) {
+      console.log("Cannot add reaction:", { hasUser: !!user, isProcessing });
+      return;
+    }
 
-    console.log("Handling reaction click:", { reactionType, messageId, isGroupMessage, userId: user.id });
+    console.log("=== Starting Reaction Click ===");
+    console.log("Reaction type:", reactionType);
+    console.log("Message ID:", messageId);
+    console.log("Is group message:", isGroupMessage);
+    console.log("User ID:", user.id);
+    console.log("Current reactions:", reactions);
+
     setIsProcessing(true);
 
     const existingReaction = reactions.find(
       r => r.user_id === user.id && r.reaction_type === reactionType
     );
 
+    console.log("Existing reaction found:", existingReaction);
+
     try {
       if (existingReaction) {
-        console.log("Removing existing reaction:", existingReaction);
+        console.log("Removing existing reaction...");
         await removeReaction.mutateAsync({ 
           messageId, 
           reactionType, 
@@ -57,32 +73,31 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
         });
         console.log("Reaction removed successfully");
       } else {
-        console.log("Adding new reaction");
-        await addReaction.mutateAsync({ 
+        console.log("Adding new reaction...");
+        const result = await addReaction.mutateAsync({ 
           messageId, 
           reactionType, 
           isGroupMessage 
         });
-        console.log("Reaction added successfully");
+        console.log("Reaction added successfully:", result);
       }
       
-      // Wait a bit before refetching to ensure database consistency
-      setTimeout(async () => {
-        await refetch();
-        setIsProcessing(false);
-      }, 100);
+      console.log("Refetching reactions...");
+      await refetch();
+      console.log("Refetch completed");
       
       setShowPicker(false);
     } catch (error) {
-      console.error("Error handling reaction:", error);
-      setIsProcessing(false);
+      console.error("=== Reaction Error ===", error);
       
-      // Show user-friendly error message
       toast({
         title: "Error",
         description: "Failed to update reaction. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
+      console.log("=== Reaction Click Complete ===");
     }
   };
 
@@ -97,25 +112,45 @@ export const MessageReactions = ({ messageId, isGroupMessage = false }: MessageR
 
   const userReactions = reactions.filter(r => r.user_id === user?.id).map(r => r.reaction_type);
 
-  console.log("Grouped reactions:", groupedReactions);
-  console.log("User reactions:", userReactions);
+  console.log("Processed data:", { groupedReactions, userReactions });
+
+  if (isLoading) {
+    console.log("Reactions loading...");
+    return (
+      <div className="flex items-center gap-1 mt-1">
+        <div className="text-xs text-muted-foreground">Loading reactions...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error("Reactions error:", error);
+  }
 
   return (
     <div className="flex items-center gap-1 mt-1">
+      {/* Debug info */}
+      <div className="text-xs text-muted-foreground mr-2">
+        Debug: {reactions.length} reactions loaded
+      </div>
+      
       {/* Existing reactions */}
-      {Object.entries(groupedReactions).map(([type, typeReactions]) => (
-        <Badge
-          key={type}
-          variant={userReactions.includes(type) ? "default" : "secondary"}
-          className={`px-2 py-0 text-xs cursor-pointer hover:bg-primary/80 ${
-            isProcessing ? 'opacity-50 pointer-events-none' : ''
-          }`}
-          onClick={() => handleReactionClick(type)}
-        >
-          <span className="mr-1">{reactionEmojis[type as keyof typeof reactionEmojis]?.emoji}</span>
-          {typeReactions.length}
-        </Badge>
-      ))}
+      {Object.entries(groupedReactions).map(([type, typeReactions]) => {
+        console.log(`Rendering reaction badge for ${type}:`, typeReactions);
+        return (
+          <Badge
+            key={type}
+            variant={userReactions.includes(type) ? "default" : "secondary"}
+            className={`px-2 py-0 text-xs cursor-pointer hover:bg-primary/80 ${
+              isProcessing ? 'opacity-50 pointer-events-none' : ''
+            }`}
+            onClick={() => handleReactionClick(type)}
+          >
+            <span className="mr-1">{reactionEmojis[type as keyof typeof reactionEmojis]?.emoji}</span>
+            {typeReactions.length}
+          </Badge>
+        );
+      })}
 
       {/* Add reaction button */}
       <Popover open={showPicker} onOpenChange={setShowPicker}>
