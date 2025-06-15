@@ -13,11 +13,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { X, Users, Plus } from "lucide-react";
+import { Users } from "lucide-react";
 import { useGroups } from "@/hooks/useGroups";
-import { useFriends } from "@/hooks/useFriends";
 import { toast } from "@/hooks/use-toast";
 
 interface CreateGroupDialogProps {
@@ -35,6 +32,8 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("Form submitted with:", { name: name.trim(), description: description.trim(), isPrivate });
 
     if (!name.trim()) {
       toast({
@@ -55,11 +54,14 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
     }
 
     try {
+      console.log("Attempting to create group...");
       const group = await createGroup.mutateAsync({
         name: name.trim(),
         description: description.trim() || undefined,
         isPrivate,
       });
+
+      console.log("Group created successfully:", group);
 
       toast({
         title: "Success",
@@ -74,6 +76,7 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
       setDescription("");
       setIsPrivate(false);
     } catch (error) {
+      console.error("Failed to create group:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create group";
       
       toast({

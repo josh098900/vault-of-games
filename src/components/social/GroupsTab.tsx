@@ -2,11 +2,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Plus, Lock, Globe } from "lucide-react";
 import { useGroups } from "@/hooks/useGroups";
 import { CreateGroupDialog } from "@/components/social/CreateGroupDialog";
-import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 export const GroupsTab = () => {
@@ -14,31 +12,37 @@ export const GroupsTab = () => {
 
   const handleJoinGroup = async (groupId: string) => {
     try {
+      console.log("Attempting to join group:", groupId);
       await joinGroup.mutateAsync(groupId);
       toast({
         title: "Success",
         description: "You have joined the group!",
       });
     } catch (error) {
+      console.error("Failed to join group:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to join group";
       toast({
         title: "Error",
-        description: "Failed to join group.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
   };
 
-  const handleLeaveGroup = async (groupId: string) => {
+  const handleLeaveGroup = async (groupId: string, groupName: string) => {
     try {
+      console.log("Attempting to leave group:", groupId);
       await leaveGroup.mutateAsync(groupId);
       toast({
         title: "Success",
-        description: "You have left the group.",
+        description: `You have left "${groupName}".`,
       });
     } catch (error) {
+      console.error("Failed to leave group:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to leave group";
       toast({
         title: "Error",
-        description: "Failed to leave group.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -106,10 +110,10 @@ export const GroupsTab = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleLeaveGroup(group.id)}
+                      onClick={() => handleLeaveGroup(group.id, group.name)}
                       disabled={leaveGroup.isPending}
                     >
-                      Leave
+                      {leaveGroup.isPending ? "Leaving..." : "Leave"}
                     </Button>
                   </div>
                 </CardContent>
@@ -144,13 +148,23 @@ export const GroupsTab = () => {
                       onClick={() => handleJoinGroup(group.id)}
                       disabled={joinGroup.isPending || group.is_private}
                     >
-                      {group.is_private ? "Private" : "Join"}
+                      {joinGroup.isPending ? "Joining..." : group.is_private ? "Private" : "Join"}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
         </div>
+        
+        {groups.filter(group => !isInGroup(group.id)).length === 0 && (
+          <div className="text-center py-8">
+            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-2">No new groups to discover</p>
+            <p className="text-sm text-muted-foreground">
+              Create your own group to get started!
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

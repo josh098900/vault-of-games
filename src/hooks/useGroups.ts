@@ -36,12 +36,17 @@ export const useGroups = () => {
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ["groups"],
     queryFn: async () => {
+      console.log("Fetching all groups...");
       const { data, error } = await supabase
         .from("gaming_groups")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching groups:", error);
+        throw error;
+      }
+      console.log("Groups fetched:", data);
       return data as GamingGroup[];
     },
   });
@@ -51,6 +56,7 @@ export const useGroups = () => {
     queryFn: async () => {
       if (!user) return [];
       
+      console.log("Fetching my groups for user:", user.id);
       const { data, error } = await supabase
         .from("group_members")
         .select(`
@@ -59,7 +65,11 @@ export const useGroups = () => {
         `)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching my groups:", error);
+        throw error;
+      }
+      console.log("My groups fetched:", data);
       return data.map(item => item.gaming_groups) as GamingGroup[];
     },
     enabled: !!user,
@@ -73,6 +83,8 @@ export const useGroups = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
+      console.log("Creating group with data:", { name, description, isPrivate, created_by: user.id });
+
       const { data, error } = await supabase
         .from("gaming_groups")
         .insert({
@@ -84,40 +96,61 @@ export const useGroups = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating group:", error);
+        throw error;
+      }
+      console.log("Group created successfully:", data);
       return data;
     },
     onSuccess: () => {
+      console.log("Invalidating queries after group creation");
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       queryClient.invalidateQueries({ queryKey: ["myGroups", user?.id] });
     },
+    onError: (error) => {
+      console.error("Create group mutation failed:", error);
+    }
   });
 
   const joinGroup = useMutation({
     mutationFn: async (groupId: string) => {
       if (!user) throw new Error("User not authenticated");
 
+      console.log("Joining group:", groupId, "for user:", user.id);
+
       const { data, error } = await supabase
         .from("group_members")
         .insert({
           group_id: groupId,
           user_id: user.id,
+          role: "member"
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error joining group:", error);
+        throw error;
+      }
+      console.log("Successfully joined group:", data);
       return data;
     },
     onSuccess: () => {
+      console.log("Invalidating queries after joining group");
       queryClient.invalidateQueries({ queryKey: ["myGroups", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
     },
+    onError: (error) => {
+      console.error("Join group mutation failed:", error);
+    }
   });
 
   const leaveGroup = useMutation({
     mutationFn: async (groupId: string) => {
       if (!user) throw new Error("User not authenticated");
+
+      console.log("Leaving group:", groupId, "for user:", user.id);
 
       const { error } = await supabase
         .from("group_members")
@@ -125,12 +158,20 @@ export const useGroups = () => {
         .eq("group_id", groupId)
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error leaving group:", error);
+        throw error;
+      }
+      console.log("Successfully left group:", groupId);
     },
     onSuccess: () => {
+      console.log("Invalidating queries after leaving group");
       queryClient.invalidateQueries({ queryKey: ["myGroups", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["groups"] });
     },
+    onError: (error) => {
+      console.error("Leave group mutation failed:", error);
+    }
   });
 
   return {
