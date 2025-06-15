@@ -1,6 +1,5 @@
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -10,22 +9,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Gamepad, 
-  User, 
-  Bell, 
   LogOut, 
   Settings, 
   Library, 
   Search, 
   Users, 
   Trophy, 
-  BookOpen,
   Star,
   MessageCircle,
   Menu
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { NavigationDropdown } from "./NavigationDropdown";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
@@ -127,12 +124,7 @@ export const Header = () => {
         <div className="flex items-center space-x-3">
           {user ? (
             <>
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="w-4 h-4" />
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-pink-500">
-                  3
-                </Badge>
-              </Button>
+              <NotificationDropdown />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
