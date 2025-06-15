@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { FriendsTab } from "@/components/social/FriendsTab";
-import { GroupsTab } from "@/components/social/GroupsTab";
 import { ChallengesTab } from "@/components/social/ChallengesTab";
 import { RecommendationsTab } from "@/components/social/RecommendationsTab";
 import { EventsTab } from "@/components/social/EventsTab";
@@ -53,7 +52,7 @@ const Social = () => {
         <div className="container mx-auto text-center">
           <h1 className="text-4xl font-bold mb-4 text-gradient">Social Gaming Hub</h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Connect with friends, join groups, take on challenges, and discover new games together.
+            Connect with friends, take on challenges, and discover new games together.
           </p>
         </div>
       </section>
@@ -65,10 +64,9 @@ const Social = () => {
         </div>
 
         <Tabs defaultValue={selectedConversation ? "messages" : "friends"} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="friends">Friends</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="groups">Groups</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
@@ -83,10 +81,6 @@ const Social = () => {
               initialSelectedConversation={selectedConversation}
               onConversationChange={setSelectedConversation}
             />
-          </TabsContent>
-          
-          <TabsContent value="groups" className="mt-6">
-            <GroupsTab />
           </TabsContent>
           
           <TabsContent value="challenges" className="mt-6">
