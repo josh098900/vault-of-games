@@ -9,11 +9,11 @@ import { formatDistanceToNow } from "date-fns";
 const getActivityIcon = (activityType: string) => {
   switch (activityType) {
     case 'game_completed':
-      return <Trophy className="w-4 h-4 text-amber-500" />;
+      return <Trophy className="w-4 h-4 text-amber-400" />;
     case 'review_posted':
-      return <Star className="w-4 h-4 text-blue-500" />;
+      return <Star className="w-4 h-4 text-blue-400" />;
     case 'user_followed':
-      return <Users className="w-4 h-4 text-green-500" />;
+      return <Users className="w-4 h-4 text-green-400" />;
     default:
       return <Activity className="w-4 h-4 text-muted-foreground" />;
   }
@@ -22,13 +22,13 @@ const getActivityIcon = (activityType: string) => {
 const getActivityColor = (activityType: string) => {
   switch (activityType) {
     case 'game_completed':
-      return 'bg-amber-50 border-amber-200';
+      return 'bg-amber-900/20 border-amber-700/30';
     case 'review_posted':
-      return 'bg-blue-50 border-blue-200';
+      return 'bg-blue-900/20 border-blue-700/30';
     case 'user_followed':
-      return 'bg-green-50 border-green-200';
+      return 'bg-green-900/20 border-green-700/30';
     default:
-      return 'bg-gray-50 border-gray-200';
+      return 'bg-muted/50 border-border';
   }
 };
 
