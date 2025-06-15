@@ -1,6 +1,8 @@
 
 import { Header } from "@/components/Header";
 import { ProfileManager } from "@/components/ProfileManager";
+import { ProfileStatistics } from "@/components/profile/ProfileStatistics";
+import { RecentActivity } from "@/components/profile/RecentActivity";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
@@ -33,14 +35,23 @@ const Profile = () => {
         <div className="container mx-auto text-center">
           <h1 className="text-4xl font-bold mb-4 text-gradient">Your Profile</h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Manage your gaming profile and connect with the community.
+            Manage your gaming profile and track your achievements.
           </p>
         </div>
       </section>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <ProfileManager />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Profile Management - Left Column */}
+          <div className="lg:col-span-1">
+            <ProfileManager />
+          </div>
+          
+          {/* Statistics and Activity - Right Columns */}
+          <div className="lg:col-span-2 space-y-8">
+            <ProfileStatistics />
+            <RecentActivity />
+          </div>
         </div>
       </div>
     </div>

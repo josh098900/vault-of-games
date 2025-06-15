@@ -8,6 +8,7 @@ import { GroupsTab } from "@/components/social/GroupsTab";
 import { ChallengesTab } from "@/components/social/ChallengesTab";
 import { RecommendationsTab } from "@/components/social/RecommendationsTab";
 import { EventsTab } from "@/components/social/EventsTab";
+import { SocialActivityFeed } from "@/components/social/SocialActivityFeed";
 
 const Social = () => {
   const { user, loading } = useAuth();
@@ -44,6 +45,11 @@ const Social = () => {
       </section>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Social Activity Feed at the top */}
+        <div className="mb-8">
+          <SocialActivityFeed />
+        </div>
+
         <Tabs defaultValue="friends" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="friends">Friends</TabsTrigger>

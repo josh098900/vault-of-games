@@ -759,6 +759,36 @@ export type Database = {
           },
         ]
       }
+      user_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          data: Json | null
+          description: string | null
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          data?: Json | null
+          description?: string | null
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          data?: Json | null
+          description?: string | null
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_follows: {
         Row: {
           created_at: string
