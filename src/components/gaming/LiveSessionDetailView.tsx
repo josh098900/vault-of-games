@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,15 +44,15 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
         .from('live_gaming_sessions')
         .select(`
           *,
-          games!game_id(title, cover_image_url, description, genre, platform),
-          profiles!user_id(username, display_name, avatar_url),
+          game:games!live_gaming_sessions_game_id_fkey(title, cover_image_url, description, genre, platform),
+          host:profiles!live_gaming_sessions_user_id_fkey(username, display_name, avatar_url),
           gaming_session_participants(
             id,
             user_id,
             role,
             joined_at,
             left_at,
-            profiles!user_id(username, display_name, avatar_url)
+            participant:profiles!gaming_session_participants_user_id_fkey(username, display_name, avatar_url)
           )
         `)
         .eq('id', sessionId)
@@ -66,7 +65,19 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
       }
       
       console.log('Successfully fetched session:', data);
-      return data;
+      
+      // Transform the data to match our expected structure
+      const transformedData = {
+        ...data,
+        games: data.game,
+        profiles: data.host,
+        gaming_session_participants: data.gaming_session_participants?.map((p: any) => ({
+          ...p,
+          profiles: p.participant
+        })) || []
+      };
+      
+      return transformedData;
     },
   });
 

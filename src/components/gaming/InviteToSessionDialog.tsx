@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +49,7 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         .select(`
           id,
           follower_id,
-          profiles!follower_id(
+          follower:profiles!user_follows_follower_id_fkey(
             id,
             username,
             display_name,
@@ -64,7 +63,14 @@ export const InviteToSessionDialog = ({ sessionId }: InviteToSessionDialogProps)
         throw error;
       }
       
-      return (data || []).filter(item => item.profiles !== null) as Follower[];
+      // Transform the data to match our interface
+      return (data || [])
+        .filter(item => item.follower !== null)
+        .map(item => ({
+          id: item.id,
+          follower_id: item.follower_id,
+          profiles: item.follower
+        })) as Follower[];
     },
     enabled: !!user && open,
   });
