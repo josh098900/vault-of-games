@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -142,14 +143,22 @@ export const useSendSessionMessage = () => {
           .eq('id', user.id)
           .single();
 
-        return {
-          ...data,
+        // Create the return object with proper typing
+        const messageWithProfile: LiveSessionMessage = {
+          id: data.id,
+          session_id: data.session_id,
+          user_id: data.user_id,
+          content: data.content,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
           profiles: profile ? {
             username: profile.username,
             display_name: profile.display_name,
             avatar_url: profile.avatar_url
           } : undefined
-        } as LiveSessionMessage;
+        };
+
+        return messageWithProfile;
       } catch (error) {
         console.error('Failed to send message:', error);
         throw error;
