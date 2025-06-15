@@ -29,14 +29,15 @@ export const useFriends = () => {
         .from("user_follows")
         .select(`
           *,
-          profiles!user_follows_following_id_fkey (
+          profiles!inner(
             id,
             username,
             display_name,
             avatar_url
           )
         `)
-        .eq("follower_id", user.id);
+        .eq("follower_id", user.id)
+        .eq("profiles.id", supabase.from("user_follows").select("following_id"));
 
       if (error) throw error;
       return data as UserFollow[];
@@ -53,14 +54,15 @@ export const useFriends = () => {
         .from("user_follows")
         .select(`
           *,
-          profiles!user_follows_follower_id_fkey (
+          profiles!inner(
             id,
             username,
             display_name,
             avatar_url
           )
         `)
-        .eq("following_id", user.id);
+        .eq("following_id", user.id)
+        .eq("profiles.id", supabase.from("user_follows").select("follower_id"));
 
       if (error) throw error;
       return data as UserFollow[];

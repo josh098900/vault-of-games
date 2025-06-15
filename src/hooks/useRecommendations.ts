@@ -44,7 +44,7 @@ export const useRecommendations = () => {
             cover_image_url,
             genre
           ),
-          profiles!game_recommendations_recommender_id_fkey (
+          profiles!inner(
             id,
             username,
             display_name,
@@ -52,6 +52,7 @@ export const useRecommendations = () => {
           )
         `)
         .eq("recipient_id", user.id)
+        .eq("profiles.id", supabase.from("game_recommendations").select("recommender_id"))
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -75,7 +76,7 @@ export const useRecommendations = () => {
             cover_image_url,
             genre
           ),
-          profiles!game_recommendations_recipient_id_fkey (
+          profiles!inner(
             id,
             username,
             display_name,
@@ -83,6 +84,7 @@ export const useRecommendations = () => {
           )
         `)
         .eq("recommender_id", user.id)
+        .eq("profiles.id", supabase.from("game_recommendations").select("recipient_id"))
         .order("created_at", { ascending: false });
 
       if (error) throw error;
