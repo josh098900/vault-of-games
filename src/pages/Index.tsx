@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Search, Star, Gamepad, User, TrendingUp, Heart, Plus } from "lucide-rea
 import { GameCard } from "@/components/GameCard";
 import { Header } from "@/components/Header";
 import { FeaturedSection } from "@/components/FeaturedSection";
+import { HowItWorksButton } from "@/components/HowItWorksButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { Game } from "@/hooks/useUserGames";
 import { useGames } from "@/hooks/useGames";
@@ -258,6 +258,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* How It Works Button */}
+      <HowItWorksButton />
     </div>
   );
 };
