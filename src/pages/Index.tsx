@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Gamepad } from "lucide-react";
@@ -21,7 +20,7 @@ const Index = () => {
   const { games, isLoading: gamesLoading } = useGames();
   const navigate = useNavigate();
 
-  // Updated featured games with real game images
+  // Updated featured games with correct game images
   const featuredGames: Game[] = [
     {
       id: "1",
@@ -41,7 +40,7 @@ const Index = () => {
       genre: "Action",
       platform: "PlayStation",
       release_year: 2020,
-      cover_image_url: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.webp",
+      cover_image_url: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2f2z.webp",
       developer: "Naughty Dog",
       publisher: "Sony Interactive Entertainment"
     },
@@ -52,7 +51,7 @@ const Index = () => {
       genre: "Roguelike",
       platform: "Steam",
       release_year: 2020,
-      cover_image_url: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.webp",
+      cover_image_url: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2i2d.webp",
       developer: "Supergiant Games",
       publisher: "Supergiant Games"
     },
