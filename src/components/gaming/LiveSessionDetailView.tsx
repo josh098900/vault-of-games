@@ -12,6 +12,7 @@ import { LiveSessionParticipants } from "./LiveSessionParticipants";
 import { InviteToSessionDialog } from "./InviteToSessionDialog";
 import { useJoinGamingSession, useEndGamingSession } from "@/hooks/useLiveGamingSessions";
 import { getGameImage } from "@/utils/gameImageMapping";
+import { LiveSessionChat } from "./LiveSessionChat";
 
 interface LiveSessionDetailViewProps {
   sessionId: string;
@@ -188,9 +189,9 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
         </Badge>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-4">
         {/* Main Session Info */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Game Info */}
           <Card>
             <CardHeader>
@@ -320,6 +321,11 @@ export const LiveSessionDetailView = ({ sessionId }: LiveSessionDetailViewProps)
             participants={activeParticipants as Participant[]}
             sessionType={session.session_type}
           />
+        </div>
+
+        {/* Chat Section */}
+        <div className="lg:col-span-1">
+          <LiveSessionChat sessionId={sessionId} />
         </div>
       </div>
     </div>

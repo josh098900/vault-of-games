@@ -1,0 +1,100 @@
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+
+interface LiveSessionMessage {
+  id: string;
+  session_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    username: string;
+    display_name: string;
+    avatar_url: string;
+  };
+}
+
+export const useLiveSessionMessages = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['live-session-messages', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return [];
+
+      const { data, error } = await supabase
+        .from('live_session_messages')
+        .select(`
+          *,
+          profiles!inner(username, display_name, avatar_url)
+        `)
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data as LiveSessionMessage[];
+    },
+    enabled: !!sessionId,
+  });
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase
+      .channel(`live-session-messages-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'live_session_messages',
+          filter: `session_id=eq.${sessionId}`
+        },
+        () => {
+          query.refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, query]);
+
+  return query;
+};
+
+export const useSendSessionMessage = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ sessionId, content }: { sessionId: string; content: string }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('live_session_messages')
+        .insert({
+          session_id: sessionId,
+          user_id: user.id,
+          content: content.trim()
+        })
+        .select(`
+          *,
+          profiles!inner(username, display_name, avatar_url)
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: ['live-session-messages', sessionId] });
+    },
+  });
+};
