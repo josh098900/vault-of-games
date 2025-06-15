@@ -1,3 +1,4 @@
+
 import { Header } from "@/components/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +16,7 @@ import { useLiveGamingSessions } from "@/hooks/useLiveGamingSessions";
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Play, Users } from "lucide-react";
+import { Play, Users, AlertCircle } from "lucide-react";
 
 const Social = () => {
   const { user, loading } = useAuth();
@@ -25,10 +26,9 @@ const Social = () => {
 
   // Debug logging
   useEffect(() => {
-    console.log('Live sessions data:', liveSessions);
-    console.log('Sessions loading:', sessionsLoading);
-    console.log('Sessions error:', sessionsError);
-  }, [liveSessions, sessionsLoading, sessionsError]);
+    console.log('Social page - Auth state:', { user: !!user, loading });
+    console.log('Social page - Live sessions:', { liveSessions, sessionsLoading, sessionsError });
+  }, [user, loading, liveSessions, sessionsLoading, sessionsError]);
 
   // Handle navigation from message dropdown
   useEffect(() => {
@@ -71,7 +71,10 @@ const Social = () => {
       {sessionsError && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4">
-            <p className="text-red-600">Error loading sessions: {sessionsError.message}</p>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <p className="text-red-600">Error loading sessions: {sessionsError.message}</p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -86,7 +89,7 @@ const Social = () => {
             </Card>
           ))}
         </div>
-      ) : liveSessions.length === 0 ? (
+      ) : liveSessions && liveSessions.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Play className="w-12 h-12 text-muted-foreground mb-4" />
@@ -100,12 +103,12 @@ const Social = () => {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Found {liveSessions.length} active session{liveSessions.length !== 1 ? 's' : ''}
+            Found {liveSessions?.length || 0} active session{(liveSessions?.length || 0) !== 1 ? 's' : ''}
           </p>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {liveSessions.map((session) => (
+            {liveSessions?.map((session) => (
               <LiveGamingSessionCard key={session.id} session={session} />
-            ))}
+            )) || []}
           </div>
         </div>
       )}

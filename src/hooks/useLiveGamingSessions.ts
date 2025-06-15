@@ -17,51 +17,57 @@ export const useLiveGamingSessions = () => {
     queryFn: async () => {
       console.log('Fetching live gaming sessions...');
       
-      // First, let's try a simpler query to see if basic data is there
-      const { data: basicSessions, error: basicError } = await supabase
-        .from('live_gaming_sessions')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      try {
+        // Try with joins first
+        const { data: sessions, error } = await supabase
+          .from('live_gaming_sessions')
+          .select(`
+            *,
+            games(title, cover_image_url),
+            profiles(username, display_name, avatar_url),
+            gaming_session_participants(
+              id,
+              user_id,
+              role,
+              joined_at,
+              left_at
+            )
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
 
-      if (basicError) {
-        console.error('Error fetching basic sessions:', basicError);
-        throw basicError;
+        if (error) {
+          console.error('Error fetching sessions with joins:', error);
+          
+          // Fallback to basic query
+          const { data: basicSessions, error: basicError } = await supabase
+            .from('live_gaming_sessions')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+
+          if (basicError) {
+            console.error('Error fetching basic sessions:', basicError);
+            throw basicError;
+          }
+
+          console.log('Fallback to basic sessions:', basicSessions?.length || 0);
+          return basicSessions || [];
+        }
+
+        console.log('Successfully fetched sessions with joins:', sessions?.length || 0);
+        console.log('Sessions data:', sessions);
+        
+        return sessions || [];
+      } catch (error) {
+        console.error('Fatal error in session fetch:', error);
+        throw error;
       }
-
-      console.log('Basic sessions found:', basicSessions?.length || 0);
-
-      // Now fetch with joins
-      const { data, error } = await supabase
-        .from('live_gaming_sessions')
-        .select(`
-          *,
-          games(title, cover_image_url),
-          profiles(username, display_name, avatar_url),
-          gaming_session_participants(
-            id,
-            user_id,
-            role,
-            joined_at,
-            left_at
-          )
-        `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching live gaming sessions with joins:', error);
-        // Fallback to basic query if joins fail
-        return basicSessions || [];
-      }
-
-      console.log('Fetched sessions with joins:', data?.length || 0);
-      console.log('Session data:', data);
-      
-      return data || [];
     },
     enabled: !!user,
-    refetchInterval: 10000, // Refetch every 10 seconds as backup
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Set up real-time subscription
@@ -71,7 +77,7 @@ export const useLiveGamingSessions = () => {
     console.log('Setting up real-time subscription for live gaming sessions');
     
     const channel = supabase
-      .channel('live-gaming-sessions-changes')
+      .channel('live-gaming-sessions-realtime')
       .on(
         'postgres_changes',
         {
@@ -81,9 +87,7 @@ export const useLiveGamingSessions = () => {
         },
         (payload) => {
           console.log('Live gaming session change detected:', payload);
-          // Force immediate refetch
           queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
-          queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
       .on(
@@ -95,9 +99,7 @@ export const useLiveGamingSessions = () => {
         },
         (payload) => {
           console.log('Gaming session participant change detected:', payload);
-          // Force immediate refetch
           queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
-          queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
       .subscribe((status) => {
@@ -150,8 +152,8 @@ export const useCreateGamingSession = () => {
           max_participants: maxParticipants,
           is_public: isPublic,
           user_id: user.user.id,
-          status: 'active', // Explicitly set status
-          current_participants: 1 // Start with 1 participant (the creator)
+          status: 'active',
+          current_participants: 1
         })
         .select(`
           *,
@@ -170,11 +172,9 @@ export const useCreateGamingSession = () => {
     },
     onSuccess: (data) => {
       console.log('Gaming session created successfully');
-      console.log('New session data:', data);
       
-      // Force immediate refetch and invalidation
+      // Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
-      queryClient.refetchQueries({ queryKey: ['live-gaming-sessions'] });
       
       toast({
         title: "Gaming session started!",
