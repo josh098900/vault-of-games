@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -130,6 +129,10 @@ export const useSendSessionMessage = () => {
         if (error) {
           console.error('Error sending message:', error);
           throw error;
+        }
+
+        if (!data) {
+          throw new Error('No data returned from message insert');
         }
 
         // Get user profile separately
