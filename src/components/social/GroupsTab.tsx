@@ -11,7 +11,6 @@ import { toast } from "@/hooks/use-toast";
 
 export const GroupsTab = () => {
   const { groups, myGroups, isLoading, joinGroup, leaveGroup } = useGroups();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const handleJoinGroup = async (groupId: string) => {
     try {
@@ -74,10 +73,12 @@ export const GroupsTab = () => {
           <h2 className="text-2xl font-bold">Gaming Groups</h2>
           <p className="text-muted-foreground">Join communities around your favorite games</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Group
-        </Button>
+        <CreateGroupDialog>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Group
+          </Button>
+        </CreateGroupDialog>
       </div>
 
       {myGroups.length > 0 && (
@@ -151,11 +152,6 @@ export const GroupsTab = () => {
             ))}
         </div>
       </div>
-
-      <CreateGroupDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-      />
     </div>
   );
 };

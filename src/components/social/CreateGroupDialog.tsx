@@ -32,7 +32,7 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
   const [isPrivate, setIsPrivate] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   
-  const { data: friends = [] } = useFriends();
+  const { following: friends = [] } = useFriends();
   const createGroup = useCreateGroupConversation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,22 +136,22 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
             <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
               {friends.map((friend) => (
                 <div
-                  key={friend.id}
+                  key={friend.profiles.id}
                   className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:bg-muted"
-                  onClick={() => toggleMember(friend.id)}
+                  onClick={() => toggleMember(friend.profiles.id)}
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={friend.avatar_url || ""} />
+                      <AvatarImage src={friend.profiles.avatar_url || ""} />
                       <AvatarFallback>
-                        {friend.display_name?.[0] || friend.username?.[0] || "U"}
+                        {friend.profiles.display_name?.[0] || friend.profiles.username?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-sm">
-                      {friend.display_name || friend.username}
+                      {friend.profiles.display_name || friend.profiles.username}
                     </span>
                   </div>
-                  {selectedMembers.includes(friend.id) && (
+                  {selectedMembers.includes(friend.profiles.id) && (
                     <Badge variant="default" className="text-xs">
                       Selected
                     </Badge>
@@ -167,14 +167,14 @@ export const CreateGroupDialog = ({ children, onGroupCreated }: CreateGroupDialo
                 </Label>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {selectedMembers.map((memberId) => {
-                    const friend = friends.find(f => f.id === memberId);
+                    const friend = friends.find(f => f.profiles.id === memberId);
                     return (
                       <Badge 
                         key={memberId} 
                         variant="secondary" 
                         className="text-xs flex items-center gap-1"
                       >
-                        {friend?.display_name || friend?.username}
+                        {friend?.profiles.display_name || friend?.profiles.username}
                         <X 
                           className="w-3 h-3 cursor-pointer" 
                           onClick={() => toggleMember(memberId)}

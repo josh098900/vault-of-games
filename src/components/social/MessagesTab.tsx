@@ -102,11 +102,15 @@ export const MessagesTab = ({
 
   if (selectedConversation || selectedGroup) {
     const isGroupChat = conversationType === "group";
-    const conversation = isGroupChat 
-      ? groupConversations.find(conv => conv.id === selectedGroup)
-      : conversations.find(conv => conv.other_user_id === selectedConversation);
     
-    const otherUserProfile = !isGroupChat ? conversation?.other_user_profile : null;
+    // Type-safe conversation handling
+    const directConversation = !isGroupChat 
+      ? conversations.find(conv => conv.other_user_id === selectedConversation)
+      : null;
+    const groupConversation = isGroupChat 
+      ? groupConversations.find(conv => conv.id === selectedGroup)
+      : null;
+    
     const replyMessage = replyToMessage ? currentMessages.find(m => m.id === replyToMessage) : null;
 
     return (
@@ -121,29 +125,29 @@ export const MessagesTab = ({
               <ArrowLeft className="w-4 h-4" />
             </Button>
             
-            {isGroupChat ? (
+            {isGroupChat && groupConversation ? (
               <>
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={conversation?.avatar_url || ""} />
+                  <AvatarImage src={groupConversation.avatar_url || ""} />
                   <AvatarFallback>
                     <Users className="w-4 h-4" />
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-lg">{conversation?.name}</CardTitle>
+                  <CardTitle className="text-lg">{groupConversation.name}</CardTitle>
                   <CardDescription>
-                    {conversation?.member_count} members
+                    {groupConversation.member_count} members
                   </CardDescription>
                 </div>
               </>
-            ) : (
+            ) : directConversation ? (
               <>
                 <div className="relative">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={otherUserProfile?.avatar_url || ""} />
+                    <AvatarImage src={directConversation.other_user_profile?.avatar_url || ""} />
                     <AvatarFallback>
-                      {otherUserProfile?.display_name?.[0] || 
-                       otherUserProfile?.username?.[0] || "U"}
+                      {directConversation.other_user_profile?.display_name?.[0] || 
+                       directConversation.other_user_profile?.username?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-0 -right-0">
@@ -152,15 +156,15 @@ export const MessagesTab = ({
                 </div>
                 <div>
                   <CardTitle className="text-lg">
-                    {otherUserProfile?.display_name || 
-                     otherUserProfile?.username || "Unknown User"}
+                    {directConversation.other_user_profile?.display_name || 
+                     directConversation.other_user_profile?.username || "Unknown User"}
                   </CardTitle>
                   <CardDescription>
-                    @{otherUserProfile?.username || "anonymous"}
+                    @{directConversation.other_user_profile?.username || "anonymous"}
                   </CardDescription>
                 </div>
               </>
-            )}
+            ) : null}
           </div>
         </CardHeader>
         <CardContent>

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -226,7 +227,14 @@ export const useGroupConversations = () => {
         .order("last_message_at", { ascending: false });
 
       if (error) throw error;
-      return groups as GroupConversation[];
+      
+      // Add unread_count to each group (defaulting to 0 for now)
+      const groupsWithUnreadCount = groups?.map(group => ({
+        ...group,
+        unread_count: 0
+      })) || [];
+
+      return groupsWithUnreadCount as GroupConversation[];
     },
     enabled: !!user,
   });
@@ -243,17 +251,32 @@ export const useGroupMessages = (groupId: string) => {
       const { data: messages, error } = await supabase
         .from("group_messages")
         .select(`
-          *,
-          profiles:sender_id(username, display_name, avatar_url)
+          *
         `)
         .eq("group_id", groupId)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
 
+      // Get unique sender IDs to fetch their profiles
+      const senderIds = [...new Set(messages?.map(msg => msg.sender_id) || [])];
+      
+      // Fetch profiles for all senders
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", senderIds);
+
+      // Create a profile lookup map
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
+      // Attach profiles to messages
       const messagesWithProfiles = messages?.map(message => ({
         ...message,
-        sender_profile: message.profiles
+        sender_profile: profileMap.get(message.sender_id) || null
       })) || [];
 
       return messagesWithProfiles as GroupMessage[];
