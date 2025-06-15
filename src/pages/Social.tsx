@@ -133,14 +133,31 @@ const Social = () => {
         </div>
 
         <Tabs defaultValue={selectedConversation ? "messages" : "live-sessions"} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="live-sessions">Live Sessions</TabsTrigger>
-            <TabsTrigger value="friends">Friends</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="challenges">Challenges</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="events">Events</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto">
+            <TabsList className="grid grid-cols-6 min-w-max sm:min-w-full">
+              <TabsTrigger value="live-sessions" className="text-xs sm:text-sm px-2 sm:px-3">
+                <span className="hidden sm:inline">Live Sessions</span>
+                <span className="sm:hidden">Sessions</span>
+              </TabsTrigger>
+              <TabsTrigger value="friends" className="text-xs sm:text-sm px-2 sm:px-3">
+                Friends
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="text-xs sm:text-sm px-2 sm:px-3">
+                Messages
+              </TabsTrigger>
+              <TabsTrigger value="challenges" className="text-xs sm:text-sm px-2 sm:px-3">
+                <span className="hidden sm:inline">Challenges</span>
+                <span className="sm:hidden">Battles</span>
+              </TabsTrigger>
+              <TabsTrigger value="recommendations" className="text-xs sm:text-sm px-2 sm:px-3">
+                <span className="hidden sm:inline">Recommendations</span>
+                <span className="sm:hidden">Recs</span>
+              </TabsTrigger>
+              <TabsTrigger value="events" className="text-xs sm:text-sm px-2 sm:px-3">
+                Events
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="live-sessions" className="mt-6">
             <LiveSessionsTab />
