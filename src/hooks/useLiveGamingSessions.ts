@@ -18,7 +18,6 @@ export const useLiveGamingSessions = () => {
       console.log('Fetching live gaming sessions...');
       
       try {
-        // Try with joins first
         const { data: sessions, error } = await supabase
           .from('live_gaming_sessions')
           .select(`
@@ -37,27 +36,11 @@ export const useLiveGamingSessions = () => {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('Error fetching sessions with joins:', error);
-          
-          // Fallback to basic query
-          const { data: basicSessions, error: basicError } = await supabase
-            .from('live_gaming_sessions')
-            .select('*')
-            .eq('status', 'active')
-            .order('created_at', { ascending: false });
-
-          if (basicError) {
-            console.error('Error fetching basic sessions:', basicError);
-            throw basicError;
-          }
-
-          console.log('Fallback to basic sessions:', basicSessions?.length || 0);
-          return basicSessions || [];
+          console.error('Error fetching sessions:', error);
+          throw error;
         }
 
-        console.log('Successfully fetched sessions with joins:', sessions?.length || 0);
-        console.log('Sessions data:', sessions);
-        
+        console.log('Successfully fetched sessions:', sessions?.length || 0);
         return sessions || [];
       } catch (error) {
         console.error('Fatal error in session fetch:', error);
@@ -66,8 +49,6 @@ export const useLiveGamingSessions = () => {
     },
     enabled: !!user,
     refetchInterval: 30000, // Refetch every 30 seconds
-    retry: 3,
-    retryDelay: 1000,
   });
 
   // Set up real-time subscription
@@ -102,9 +83,7 @@ export const useLiveGamingSessions = () => {
           queryClient.invalidateQueries({ queryKey: ['live-gaming-sessions'] });
         }
       )
-      .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
       console.log('Cleaning up real-time subscription');
