@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -104,6 +103,11 @@ export const GameCard = ({ game, onWriteReview }: GameCardProps) => {
     }
   };
 
+  const handleViewDetails = () => {
+    // Navigate to game details page with game ID
+    navigate(`/game/${game.id}`, { state: { game } });
+  };
+
   return (
     <Card className="gaming-card group overflow-hidden">
       <div className="relative">
@@ -198,7 +202,10 @@ export const GameCard = ({ game, onWriteReview }: GameCardProps) => {
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30">
+            <Button 
+              className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30"
+              onClick={handleViewDetails}
+            >
               View Details
             </Button>
             {onWriteReview && (
