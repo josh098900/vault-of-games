@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,18 +13,47 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Plus } from "lucide-react";
-import { useConversations, useUnreadMessageCount } from "@/hooks/useMessages";
+import { useConversations, useUnreadMessageCount, useUpdatePresence } from "@/hooks/useMessages";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { StartConversationDialog } from "./social/StartConversationDialog";
+import { UserPresenceIndicator } from "./social/UserPresenceIndicator";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const MessageDropdown = () => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const { data: conversations = [], isLoading } = useConversations();
   const { data: unreadCount = 0 } = useUnreadMessageCount();
+  const updatePresence = useUpdatePresence();
   const navigate = useNavigate();
 
   const recentConversations = conversations.slice(0, 5);
+
+  // Update user presence to online when component mounts and periodically
+  useEffect(() => {
+    if (user) {
+      updatePresence.mutate("online");
+      
+      const interval = setInterval(() => {
+        updatePresence.mutate("online");
+      }, 60000); // Update every minute
+
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  // Set user to offline when page unloads
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (user) {
+        navigator.sendBeacon('/api/presence', JSON.stringify({ status: 'offline' }));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [user]);
 
   const handleConversationClick = (otherUserId: string) => {
     console.log("Navigating to conversation with user:", otherUserId);
@@ -78,13 +107,18 @@ export const MessageDropdown = () => {
                   conversation.unread_count > 0 ? 'bg-primary/5 border-l-2 border-l-primary' : ''
                 }`}
               >
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
-                  <AvatarFallback>
-                    {conversation.other_user_profile?.display_name?.[0] || 
-                     conversation.other_user_profile?.username?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={conversation.other_user_profile?.avatar_url || ""} />
+                    <AvatarFallback>
+                      {conversation.other_user_profile?.display_name?.[0] || 
+                       conversation.other_user_profile?.username?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-0 -right-0">
+                    <UserPresenceIndicator userId={conversation.other_user_id} size="sm" />
+                  </div>
+                </div>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
