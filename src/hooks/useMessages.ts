@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -174,7 +175,7 @@ export const useUnreadMessageCount = () => {
     enabled: !!user,
   });
 
-  // Set up real-time subscription for new messages
+  // Set up real-time subscription for new messages - only for messages TO the current user
   useEffect(() => {
     if (!user) return;
 
@@ -183,13 +184,33 @@ export const useUnreadMessageCount = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'direct_messages',
           filter: `recipient_id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
+          console.log('New message received:', payload);
+          // Only refetch if the message is TO the current user (not FROM them)
+          if (payload.new && payload.new.recipient_id === user.id && payload.new.sender_id !== user.id) {
+            query.refetch();
+            queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Message updated:', payload);
+          // Refetch when messages are marked as read
           query.refetch();
+          queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
         }
       )
       .subscribe();
@@ -197,7 +218,7 @@ export const useUnreadMessageCount = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, query]);
+  }, [user, query, queryClient]);
 
   return query;
 };
