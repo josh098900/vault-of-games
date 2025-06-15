@@ -675,62 +675,120 @@ export const useCreateGroupConversation = () => {
       isPrivate?: boolean; 
       memberIds: string[];
     }) => {
-      console.log("Creating group conversation:", { name, description, isPrivate, memberIds, userId: user?.id });
+      console.log("=== GROUP CREATION DEBUG START ===");
+      console.log("Current user:", user);
+      console.log("Input parameters:", { name, description, isPrivate, memberIds });
 
       if (!user) {
+        console.error("❌ User not authenticated");
         throw new Error("User not authenticated");
       }
 
-      // First create the group conversation
+      console.log("✅ User authenticated, proceeding with group creation");
+
+      // Step 1: Create the group conversation
+      console.log("📝 Creating group conversation...");
+      const groupData = {
+        name: name.trim(),
+        description: description?.trim() || null,
+        is_private: isPrivate || false,
+        created_by: user.id,
+      };
+      
+      console.log("Group data to insert:", groupData);
+
       const { data: group, error: groupError } = await supabase
         .from("group_conversations")
-        .insert({
-          name,
-          description,
-          is_private: isPrivate || false,
-          created_by: user.id,
-        })
+        .insert(groupData)
         .select()
         .single();
 
       if (groupError) {
-        console.error("Error creating group:", groupError);
-        throw groupError;
+        console.error("❌ Error creating group:", groupError);
+        console.error("Error details:", {
+          code: groupError.code,
+          message: groupError.message,
+          details: groupError.details,
+          hint: groupError.hint
+        });
+        throw new Error(`Failed to create group: ${groupError.message}`);
       }
 
-      console.log("Group created successfully:", group);
+      console.log("✅ Group created successfully:", group);
 
-      // The creator is automatically added as admin by the trigger
-      // Now add the selected members as regular members
+      // Step 2: Verify the creator was automatically added as admin by trigger
+      console.log("🔍 Checking if creator was added as admin by trigger...");
+      const { data: creatorMembership, error: membershipCheckError } = await supabase
+        .from("group_conversation_members")
+        .select("*")
+        .eq("group_id", group.id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (membershipCheckError) {
+        console.error("❌ Error checking creator membership:", membershipCheckError);
+        // If the trigger didn't work, manually add the creator
+        console.log("🔧 Manually adding creator as admin...");
+        const { error: manualAddError } = await supabase
+          .from("group_conversation_members")
+          .insert({
+            group_id: group.id,
+            user_id: user.id,
+            role: 'admin',
+          });
+
+        if (manualAddError) {
+          console.error("❌ Failed to manually add creator:", manualAddError);
+          throw new Error(`Failed to add creator to group: ${manualAddError.message}`);
+        }
+        console.log("✅ Creator manually added as admin");
+      } else {
+        console.log("✅ Creator automatically added by trigger:", creatorMembership);
+      }
+
+      // Step 3: Add selected members
       if (memberIds.length > 0) {
+        console.log(`👥 Adding ${memberIds.length} members:`, memberIds);
+        
         const members = memberIds.map(memberId => ({
           group_id: group.id,
           user_id: memberId,
           role: 'member' as const,
         }));
 
-        console.log("Adding members:", members);
+        console.log("Member data to insert:", members);
 
         const { error: membersError } = await supabase
           .from("group_conversation_members")
           .insert(members);
 
         if (membersError) {
-          console.error("Error adding members:", membersError);
-          throw membersError;
+          console.error("❌ Error adding members:", membersError);
+          console.error("Members error details:", {
+            code: membersError.code,
+            message: membersError.message,
+            details: membersError.details,
+            hint: membersError.hint
+          });
+          throw new Error(`Failed to add members: ${membersError.message}`);
         }
 
-        console.log("Members added successfully");
+        console.log("✅ Members added successfully");
+      } else {
+        console.log("ℹ️ No additional members to add");
       }
 
+      console.log("=== GROUP CREATION DEBUG END ===");
+      console.log("🎉 Group creation completed successfully!");
+      
       return group;
     },
-    onSuccess: () => {
-      console.log("Group creation successful, invalidating queries");
+    onSuccess: (data) => {
+      console.log("🔄 Invalidating queries after successful group creation");
       queryClient.invalidateQueries({ queryKey: ["group_conversations", user?.id] });
     },
     onError: (error) => {
-      console.error("Group creation failed:", error);
+      console.error("💥 Group creation mutation failed:", error);
     }
   });
 };
