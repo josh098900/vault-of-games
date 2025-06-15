@@ -16,7 +16,7 @@ import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsR
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 
-const getNotificationIcon = (type: Notification['type']) => {
+const getNotificationIcon = (type: string) => {
   switch (type) {
     case 'discussion_reply':
       return <MessageCircle className="w-4 h-4 text-blue-500" />;
@@ -44,7 +44,8 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
 
     // Navigate based on notification type
     if (notification.type === 'discussion_reply' || notification.type === 'discussion_like') {
-      const discussionId = notification.data?.discussion_id;
+      const data = notification.data as any;
+      const discussionId = data?.discussion_id;
       if (discussionId) {
         navigate(`/community/discussion/${discussionId}`);
       }
