@@ -702,6 +702,7 @@ export const useMarkMessageRead = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unread_messages_count", user?.id] });
     },
   });
 };
