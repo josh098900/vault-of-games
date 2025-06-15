@@ -16,6 +16,7 @@ import DiscussionDetail from "./pages/DiscussionDetail";
 import Reviews from "./pages/Reviews";
 import Leaderboards from "./pages/Leaderboards";
 import GameDetail from "./pages/GameDetail";
+import LiveSessionDetail from "./pages/LiveSessionDetail";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/game/:id" element={<GameDetail />} />
+            <Route path="/live-session/:sessionId" element={<LiveSessionDetail />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

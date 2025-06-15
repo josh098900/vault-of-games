@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, MessageCircle, Heart, Check, CheckCheck } from "lucide-react";
+import { Bell, MessageCircle, Heart, Check, CheckCheck, Users, Play } from "lucide-react";
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, type Notification } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
@@ -26,6 +26,8 @@ const getNotificationIcon = (type: string) => {
       return <Heart className="w-4 h-4 text-pink-500" />;
     case 'mention':
       return <MessageCircle className="w-4 h-4 text-green-500" />;
+    case 'session_invite':
+      return <Users className="w-4 h-4 text-purple-500" />;
     case 'system':
       return <Bell className="w-4 h-4 text-gray-500" />;
     default:
@@ -48,6 +50,12 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
       const discussionId = data?.discussion_id;
       if (discussionId) {
         navigate(`/community/discussion/${discussionId}`);
+      }
+    } else if (notification.type === 'session_invite') {
+      const data = notification.data as any;
+      const sessionId = data?.session_id;
+      if (sessionId) {
+        navigate(`/live-session/${sessionId}`);
       }
     }
   };
